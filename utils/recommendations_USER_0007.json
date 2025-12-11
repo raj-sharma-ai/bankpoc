@@ -1,0 +1,290 @@
+{
+  "user_id": "USER_0007",
+  "user_metadata": {
+    "age": 64,
+    "gender": "M",
+    "occupation": "Self-employed",
+    "risk_label": "medium",
+    "risk_score": 0.6,
+    "income": 346082.0,
+    "credit_score": 739,
+    "savings_rate": 0.21,
+    "debt_to_income": 0.1158,
+    "digital_activity": 42.56,
+    "portfolio_diversity": 78.46
+  },
+  "top_stock_recommendations": [
+    {
+      "symbol": "HINDZINC.NS",
+      "company_name": "Hindustan Zinc Limited",
+      "similarity_score": 0.954384,
+      "metadata": {
+        "sector": "Metals",
+        "market_cap": 2073152716800.0,
+        "beta": 0.54,
+        "volatility_30d": 0.2552,
+        "volatility_90d": 0.2726,
+        "return_1y": -0.0188,
+        "dividend_yield": 582.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "VEDL.NS",
+      "company_name": "Vedanta Limited",
+      "similarity_score": 0.928974,
+      "metadata": {
+        "sector": "Metals",
+        "market_cap": 2008107712512.0,
+        "beta": 0.81,
+        "volatility_30d": 0.261,
+        "volatility_90d": 0.2385,
+        "return_1y": 0.0999,
+        "dividend_yield": 982.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "HEXT.NS",
+      "company_name": "Hexaware Technologies Limited",
+      "similarity_score": 0.883712,
+      "metadata": {
+        "sector": "Others",
+        "market_cap": 457851437056.0,
+        "beta": 1.0,
+        "volatility_30d": 0.3779,
+        "volatility_90d": 0.3744,
+        "return_1y": 0.0497,
+        "dividend_yield": 305.0,
+        "risk_bucket": "Low"
+      }
+    },
+    {
+      "symbol": "AEGISLOG.NS",
+      "company_name": "nan",
+      "similarity_score": 0.883555,
+      "metadata": {
+        "sector": "Logistics",
+        "market_cap": 260120330240.0,
+        "beta": 0.62,
+        "volatility_30d": 0.2116,
+        "volatility_90d": 0.3844,
+        "return_1y": -0.108,
+        "dividend_yield": 108.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "MSUMI.NS",
+      "company_name": "Motherson Sumi Wiring India Limited",
+      "similarity_score": 0.875073,
+      "metadata": {
+        "sector": "Automobile",
+        "market_cap": 298557440000.0,
+        "beta": -0.11,
+        "volatility_30d": 0.2243,
+        "volatility_90d": 0.2939,
+        "return_1y": 0.0874,
+        "dividend_yield": 241.0,
+        "risk_bucket": "Low"
+      }
+    },
+    {
+      "symbol": "HYUNDAI.NS",
+      "company_name": "nan",
+      "similarity_score": 0.872824,
+      "metadata": {
+        "sector": "Automobile",
+        "market_cap": 1852512403456.0,
+        "beta": 1.0,
+        "volatility_30d": 0.2409,
+        "volatility_90d": 0.3207,
+        "return_1y": 0.2386,
+        "dividend_yield": 91.0,
+        "risk_bucket": "Low"
+      }
+    },
+    {
+      "symbol": "NATIONALUM.NS",
+      "company_name": "National Aluminium Company Limited",
+      "similarity_score": 0.87054,
+      "metadata": {
+        "sector": "Metals",
+        "market_cap": 484960305152.0,
+        "beta": 0.87,
+        "volatility_30d": 0.352,
+        "volatility_90d": 0.3017,
+        "return_1y": 0.1153,
+        "dividend_yield": 531.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "UNIONBANK.NS",
+      "company_name": "Union Bank of India",
+      "similarity_score": 0.868585,
+      "metadata": {
+        "sector": "Banking",
+        "market_cap": 1139315703808.0,
+        "beta": 1.0,
+        "volatility_30d": 0.2655,
+        "volatility_90d": 0.2505,
+        "return_1y": 0.197,
+        "dividend_yield": 310.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "KPITTECH.NS",
+      "company_name": "KPIT Technologies Limited",
+      "similarity_score": 0.862944,
+      "metadata": {
+        "sector": "IT",
+        "market_cap": 329846390784.0,
+        "beta": -0.1,
+        "volatility_30d": 0.2639,
+        "volatility_90d": 0.2933,
+        "return_1y": -0.1759,
+        "dividend_yield": 67.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "LTTS.NS",
+      "company_name": "L&T Technology Services Limited",
+      "similarity_score": 0.862735,
+      "metadata": {
+        "sector": "IT",
+        "market_cap": 478014111744.0,
+        "beta": 0.16,
+        "volatility_30d": 0.3387,
+        "volatility_90d": 0.2606,
+        "return_1y": -0.14,
+        "dividend_yield": 123.0,
+        "risk_bucket": "Medium"
+      }
+    }
+  ],
+  "top_mutual_fund_recommendations": [
+    {
+      "fund_name": "Nippon Income Fund - Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/nippon-india-medium-to-long-duration-fund-direct-plan/MRC946",
+      "similarity_score": 0.928299,
+      "metadata": {
+        "aum": 87.28,
+        "expense_ratio": 0.0067,
+        "sharpe_ratio": 0.34,
+        "beta": 1.22,
+        "std_dev": 2.42
+      }
+    },
+    {
+      "fund_name": "SBI Focused Equity Fund - D (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/sbi-focused-equity-fund-direct-plan/MSB536",
+      "similarity_score": 0.89617,
+      "metadata": {
+        "aum": 2713.94,
+        "expense_ratio": 0.0077,
+        "sharpe_ratio": 1.03,
+        "beta": 0.73,
+        "std_dev": 10.69
+      }
+    },
+    {
+      "fund_name": "Union Equity Fund (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/union-equity-fund/MUK001",
+      "similarity_score": 0.895127,
+      "metadata": {
+        "aum": 452.06,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "IDBI Equity Advantage - Reg (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-equity-advantage-fund-regular-plan/MIB142",
+      "similarity_score": 0.889446,
+      "metadata": {
+        "aum": 490.38,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "IDBI India Top 100 Equity Fund (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-india-top-100-equity-fund/MIB062",
+      "similarity_score": 0.885221,
+      "metadata": {
+        "aum": 397.87,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "Union Equity Fund - Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/union-equity-fund-direct-plan/MUK027",
+      "similarity_score": 0.881547,
+      "metadata": {
+        "aum": 16.57,
+        "expense_ratio": 0.0092,
+        "sharpe_ratio": 0.71,
+        "beta": 0.91,
+        "std_dev": 12.48
+      }
+    },
+    {
+      "fund_name": "LIC MF Conservative Hybrid Fund",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/lic-mf-conservative-hybrid-fund-direct-plan-growth/MJB178",
+      "similarity_score": 0.875451,
+      "metadata": {
+        "aum": 19.21,
+        "expense_ratio": 0.0142,
+        "sharpe_ratio": 0.24,
+        "beta": 1.02,
+        "std_dev": 3.35
+      }
+    },
+    {
+      "fund_name": "IDBI Equity Advantage -Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-equity-advantage-fund-direct-plan/MIB143",
+      "similarity_score": 0.875039,
+      "metadata": {
+        "aum": 33.04,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "IDBI India Top 100 Eqty -Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-india-top-100-equity-fund-direct-plan/MIB092",
+      "similarity_score": 0.874596,
+      "metadata": {
+        "aum": 19.3,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "SBI Dynamic Bond Fund - Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/sbi-dynamic-bond-fund-direct-plan/MSB528",
+      "similarity_score": 0.873831,
+      "metadata": {
+        "aum": 863.16,
+        "expense_ratio": 0.0063,
+        "sharpe_ratio": 0.56,
+        "beta": 1.12,
+        "std_dev": 2.49
+      }
+    }
+  ]
+}

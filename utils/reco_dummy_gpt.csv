@@ -1,0 +1,16 @@
+customer_id,age,gender,citytier,annualincome,occupation,creditscore,avgmonthlyspend,savingsrate,investmentamountlastyear,pastinvestments
+1,42,M,1,1300000,Salaried,720,38000,0.22,35000,MF
+2,37,F,1,1100000,Salaried,710,32000,0.20,30000,MF
+3,46,M,1,1500000,Salaried,735,40000,0.25,45000,stocks
+4,40,F,2,950000,Salaried,700,28000,0.18,22000,insurance
+5,44,M,1,1200000,Salaried,725,30000,0.24,38000,MF
+6,45,F,1,1000000,Business,665,38000,0.20,22000,insurance
+7,32,M,3,550000,Salaried,650,25000,0.18,10000,insurance
+8,38,F,1,800000,Salaried,690,45000,0.16,12000,MF
+9,33,M,2,650000,Salaried,670,28000,0.12,15000,insurance
+10,40,F,1,900000,Business,660,42000,0.14,20000,MF
+11,36,M,2,700000,Salaried,655,30000,0.15,10000,insurance
+12,28,M,2,280000,Salaried,580,25000,0.05,2000,None
+13,36,F,1,900000,Salaried,640,55000,0.10,15000,MF_Stocks
+14,42,M,2,750000,Business,585,32000,0.22,20000,MF
+15,45,M,1,680000,Salaried,610,40000,0.12,10000,insurance

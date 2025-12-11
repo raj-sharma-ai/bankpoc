@@ -1,0 +1,290 @@
+{
+  "user_id": "USER_0005",
+  "user_metadata": {
+    "age": 52,
+    "gender": "F",
+    "occupation": "Salaried",
+    "risk_label": "high",
+    "risk_score": 0.9,
+    "income": 1563963.0,
+    "credit_score": 623,
+    "savings_rate": 0.08,
+    "debt_to_income": 0.1009,
+    "digital_activity": 53.54,
+    "portfolio_diversity": 0.0
+  },
+  "top_stock_recommendations": [
+    {
+      "symbol": "ADANIGREEN.NS",
+      "company_name": "Adani Green Energy Limited",
+      "similarity_score": 0.989675,
+      "metadata": {
+        "sector": "Energy",
+        "market_cap": 1649811652608.0,
+        "beta": 0.81,
+        "volatility_30d": 0.4035,
+        "volatility_90d": 0.3743,
+        "return_1y": -0.1727,
+        "dividend_yield": 0.0,
+        "risk_bucket": "High"
+      }
+    },
+    {
+      "symbol": "ADANIENT.NS",
+      "company_name": "Adani Enterprises Limited",
+      "similarity_score": 0.975926,
+      "metadata": {
+        "sector": "Others",
+        "market_cap": 2654390714368.0,
+        "beta": 0.58,
+        "volatility_30d": 0.301,
+        "volatility_90d": 0.2856,
+        "return_1y": -0.111,
+        "dividend_yield": 6.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "IKS.NS",
+      "company_name": "nan",
+      "similarity_score": 0.973357,
+      "metadata": {
+        "sector": "Others",
+        "market_cap": 264717303808.0,
+        "beta": 1.0,
+        "volatility_30d": 0.3303,
+        "volatility_90d": 0.2786,
+        "return_1y": -0.1112,
+        "dividend_yield": 0.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "EMCURE.NS",
+      "company_name": "nan",
+      "similarity_score": 0.971766,
+      "metadata": {
+        "sector": "Pharma",
+        "market_cap": 267513905152.0,
+        "beta": 1.0,
+        "volatility_30d": 0.3127,
+        "volatility_90d": 0.3062,
+        "return_1y": 0.0302,
+        "dividend_yield": 21.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "MEDANTA.NS",
+      "company_name": "Global Health Limited",
+      "similarity_score": 0.970664,
+      "metadata": {
+        "sector": "Pharma",
+        "market_cap": 308933066752.0,
+        "beta": -0.34,
+        "volatility_30d": 0.3092,
+        "volatility_90d": 0.2888,
+        "return_1y": -0.0064,
+        "dividend_yield": 4.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "MUTHOOTFIN.NS",
+      "company_name": "Muthoot Finance Limited",
+      "similarity_score": 0.968504,
+      "metadata": {
+        "sector": "Financial Services",
+        "market_cap": 1499275329536.0,
+        "beta": 0.65,
+        "volatility_30d": 0.3464,
+        "volatility_90d": 0.3167,
+        "return_1y": 0.9361,
+        "dividend_yield": 68.0,
+        "risk_bucket": "Low"
+      }
+    },
+    {
+      "symbol": "SWIGGY.NS",
+      "company_name": "nan",
+      "similarity_score": 0.967135,
+      "metadata": {
+        "sector": "Retail",
+        "market_cap": 914531024896.0,
+        "beta": 1.0,
+        "volatility_30d": 0.3321,
+        "volatility_90d": 0.3296,
+        "return_1y": -0.3067,
+        "dividend_yield": 0.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "JKCEMENT.NS",
+      "company_name": "J.K. Cement Limited",
+      "similarity_score": 0.965243,
+      "metadata": {
+        "sector": "Cement",
+        "market_cap": 420416552960.0,
+        "beta": 0.35,
+        "volatility_30d": 0.3167,
+        "volatility_90d": 0.3006,
+        "return_1y": 0.1836,
+        "dividend_yield": 27.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "HEXT.NS",
+      "company_name": "Hexaware Technologies Limited",
+      "similarity_score": 0.964216,
+      "metadata": {
+        "sector": "Others",
+        "market_cap": 457851437056.0,
+        "beta": 1.0,
+        "volatility_30d": 0.3779,
+        "volatility_90d": 0.3744,
+        "return_1y": 0.0497,
+        "dividend_yield": 305.0,
+        "risk_bucket": "Low"
+      }
+    },
+    {
+      "symbol": "AEGISVOPAK.NS",
+      "company_name": "nan",
+      "similarity_score": 0.963886,
+      "metadata": {
+        "sector": "Others",
+        "market_cap": 264809988096.0,
+        "beta": 1.0,
+        "volatility_30d": 0.3556,
+        "volatility_90d": 0.4023,
+        "return_1y": -0.025,
+        "dividend_yield": 0.0,
+        "risk_bucket": "Medium"
+      }
+    }
+  ],
+  "top_mutual_fund_recommendations": [
+    {
+      "fund_name": "Union Equity Fund - Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/union-equity-fund-direct-plan/MUK027",
+      "similarity_score": 0.947055,
+      "metadata": {
+        "aum": 16.57,
+        "expense_ratio": 0.0092,
+        "sharpe_ratio": 0.71,
+        "beta": 0.91,
+        "std_dev": 12.48
+      }
+    },
+    {
+      "fund_name": "Union Equity Fund (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/union-equity-fund/MUK001",
+      "similarity_score": 0.943269,
+      "metadata": {
+        "aum": 452.06,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "IDBI Equity Advantage -Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-equity-advantage-fund-direct-plan/MIB143",
+      "similarity_score": 0.939408,
+      "metadata": {
+        "aum": 33.04,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "IDBI India Top 100 Eqty -Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-india-top-100-equity-fund-direct-plan/MIB092",
+      "similarity_score": 0.934297,
+      "metadata": {
+        "aum": 19.3,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "IDBI Equity Advantage - Reg (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-equity-advantage-fund-regular-plan/MIB142",
+      "similarity_score": 0.933909,
+      "metadata": {
+        "aum": 490.38,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "IDBI India Top 100 Equity Fund (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-india-top-100-equity-fund/MIB062",
+      "similarity_score": 0.930197,
+      "metadata": {
+        "aum": 397.87,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "IDBI Flexi Cap Fund - DP - (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-flexi-cap-fund-direct-plan/MIB216",
+      "similarity_score": 0.929028,
+      "metadata": {
+        "aum": 14.62,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "IDBI Flexi Cap Fund - RP - (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-flexi-cap-fund-regular-plan/MIB214",
+      "similarity_score": 0.923647,
+      "metadata": {
+        "aum": 304.83,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    },
+    {
+      "fund_name": "SBI Focused Equity Fund (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/sbi-focused-equity-fund/MSB059",
+      "similarity_score": 0.923224,
+      "metadata": {
+        "aum": 10904.74,
+        "expense_ratio": 0.0155,
+        "sharpe_ratio": 0.95,
+        "beta": 0.73,
+        "std_dev": 10.68
+      }
+    },
+    {
+      "fund_name": "IDBI Hybrid Equity Fund - DP (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/idbi-hybrid-equity-fund-direct-plan/MIB226",
+      "similarity_score": 0.921755,
+      "metadata": {
+        "aum": 4.63,
+        "expense_ratio": 0.01,
+        "sharpe_ratio": 0.01,
+        "beta": 1.0,
+        "std_dev": 13.0
+      }
+    }
+  ]
+}

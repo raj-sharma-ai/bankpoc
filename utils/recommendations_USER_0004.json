@@ -1,0 +1,290 @@
+{
+  "user_id": "USER_0004",
+  "user_metadata": {
+    "age": 57,
+    "gender": "F",
+    "occupation": "Self-employed",
+    "risk_label": "low",
+    "risk_score": 0.3,
+    "income": 1072417.0,
+    "credit_score": 795,
+    "savings_rate": 0.32,
+    "debt_to_income": 0.0495,
+    "digital_activity": 44.76,
+    "portfolio_diversity": 77.59
+  },
+  "top_stock_recommendations": [
+    {
+      "symbol": "ONGC.NS",
+      "company_name": "Oil and Natural Gas Corporation Limited",
+      "similarity_score": 0.959125,
+      "metadata": {
+        "sector": "Energy",
+        "market_cap": 3004294496256.0,
+        "beta": 0.26,
+        "volatility_30d": 0.1491,
+        "volatility_90d": 0.1335,
+        "return_1y": -0.0356,
+        "dividend_yield": 757.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "COALINDIA.NS",
+      "company_name": "Coal India Limited",
+      "similarity_score": 0.958826,
+      "metadata": {
+        "sector": "Energy",
+        "market_cap": 2332900720640.0,
+        "beta": 1.0,
+        "volatility_30d": 0.1561,
+        "volatility_90d": 0.1378,
+        "return_1y": -0.0273,
+        "dividend_yield": 697.0,
+        "risk_bucket": "Low"
+      }
+    },
+    {
+      "symbol": "VEDL.NS",
+      "company_name": "Vedanta Limited",
+      "similarity_score": 0.954343,
+      "metadata": {
+        "sector": "Metals",
+        "market_cap": 2008107712512.0,
+        "beta": 0.81,
+        "volatility_30d": 0.261,
+        "volatility_90d": 0.2385,
+        "return_1y": 0.0999,
+        "dividend_yield": 982.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "RECLTD.NS",
+      "company_name": "REC Limited",
+      "similarity_score": 0.947809,
+      "metadata": {
+        "sector": "Others",
+        "market_cap": 902494748672.0,
+        "beta": 0.3,
+        "volatility_30d": 0.2259,
+        "volatility_90d": 0.1936,
+        "return_1y": -0.3562,
+        "dividend_yield": 671.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "HINDZINC.NS",
+      "company_name": "Hindustan Zinc Limited",
+      "similarity_score": 0.945575,
+      "metadata": {
+        "sector": "Metals",
+        "market_cap": 2073152716800.0,
+        "beta": 0.54,
+        "volatility_30d": 0.2552,
+        "volatility_90d": 0.2726,
+        "return_1y": -0.0188,
+        "dividend_yield": 582.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "POWERGRID.NS",
+      "company_name": "Power Grid Corporation of India Limited",
+      "similarity_score": 0.937976,
+      "metadata": {
+        "sector": "Energy",
+        "market_cap": 2465124843520.0,
+        "beta": 0.19,
+        "volatility_30d": 0.1823,
+        "volatility_90d": 0.1717,
+        "return_1y": -0.1674,
+        "dividend_yield": 500.0,
+        "risk_bucket": "Low"
+      }
+    },
+    {
+      "symbol": "WIPRO.NS",
+      "company_name": "Wipro Limited",
+      "similarity_score": 0.933864,
+      "metadata": {
+        "sector": "IT",
+        "market_cap": 2704663379968.0,
+        "beta": 0.58,
+        "volatility_30d": 0.1538,
+        "volatility_90d": 0.1983,
+        "return_1y": -0.0969,
+        "dividend_yield": 423.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "INFY.NS",
+      "company_name": "Infosys Limited",
+      "similarity_score": 0.925995,
+      "metadata": {
+        "sector": "IT",
+        "market_cap": 6607979675648.0,
+        "beta": 0.33,
+        "volatility_30d": 0.1986,
+        "volatility_90d": 0.2321,
+        "return_1y": -0.1463,
+        "dividend_yield": 278.0,
+        "risk_bucket": "Low"
+      }
+    },
+    {
+      "symbol": "CENTRALBK.NS",
+      "company_name": "Central Bank of India",
+      "similarity_score": 0.917733,
+      "metadata": {
+        "sector": "Banking",
+        "market_cap": 328565850112.0,
+        "beta": 0.35,
+        "volatility_30d": 0.2301,
+        "volatility_90d": 0.234,
+        "return_1y": -0.3855,
+        "dividend_yield": 159.0,
+        "risk_bucket": "Medium"
+      }
+    },
+    {
+      "symbol": "HCLTECH.NS",
+      "company_name": "HCL Technologies Limited",
+      "similarity_score": 0.917559,
+      "metadata": {
+        "sector": "IT",
+        "market_cap": 4519663501312.0,
+        "beta": 0.28,
+        "volatility_30d": 0.2048,
+        "volatility_90d": 0.1955,
+        "return_1y": -0.0994,
+        "dividend_yield": 285.0,
+        "risk_bucket": "Low"
+      }
+    }
+  ],
+  "top_mutual_fund_recommendations": [
+    {
+      "fund_name": "HDFC Medium Term Debt Fund - D (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/hdfc-medium-term-debt-fund-direct-plan/MHD1197",
+      "similarity_score": 0.907793,
+      "metadata": {
+        "aum": 895.98,
+        "expense_ratio": 0.0067,
+        "sharpe_ratio": 1.18,
+        "beta": 1.07,
+        "std_dev": 1.26
+      }
+    },
+    {
+      "fund_name": "Mirae Asset Short Duration Fund",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/mirae-asset-short-duration-fund-direct-plan-growth/MMA137",
+      "similarity_score": 0.897127,
+      "metadata": {
+        "aum": 212.03,
+        "expense_ratio": 0.0023,
+        "sharpe_ratio": 1.33,
+        "beta": 1.4,
+        "std_dev": 0.99
+      }
+    },
+    {
+      "fund_name": "Invesco India Short Duration Fund",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/invesco-india-short-duration-fund-direct-plan-growth/MLI615",
+      "similarity_score": 0.893851,
+      "metadata": {
+        "aum": 944.41,
+        "expense_ratio": 0.0035,
+        "sharpe_ratio": 1.16,
+        "beta": 1.45,
+        "std_dev": 1.01
+      }
+    },
+    {
+      "fund_name": "Tata Short Term Bond - Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/tata-short-term-bond-fund-direct-plan/MTA793",
+      "similarity_score": 0.8913,
+      "metadata": {
+        "aum": 1966.64,
+        "expense_ratio": 0.0034,
+        "sharpe_ratio": 1.13,
+        "beta": 1.41,
+        "std_dev": 1.05
+      }
+    },
+    {
+      "fund_name": "SBI Dynamic Bond Fund - Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/sbi-dynamic-bond-fund-direct-plan/MSB528",
+      "similarity_score": 0.886807,
+      "metadata": {
+        "aum": 863.16,
+        "expense_ratio": 0.0063,
+        "sharpe_ratio": 0.56,
+        "beta": 1.12,
+        "std_dev": 2.49
+      }
+    },
+    {
+      "fund_name": "Nippon Income Fund - Direct (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/nippon-india-medium-to-long-duration-fund-direct-plan/MRC946",
+      "similarity_score": 0.881933,
+      "metadata": {
+        "aum": 87.28,
+        "expense_ratio": 0.0067,
+        "sharpe_ratio": 0.34,
+        "beta": 1.22,
+        "std_dev": 2.42
+      }
+    },
+    {
+      "fund_name": "Bank of India Ultra Short Duration Fund - R (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/bank-of-india-ultra-short-duration-fund-regular-growth/MBA013",
+      "similarity_score": 0.880117,
+      "metadata": {
+        "aum": 90.89,
+        "expense_ratio": 0.0085,
+        "sharpe_ratio": -0.77,
+        "beta": 1.02,
+        "std_dev": 0.24
+      }
+    },
+    {
+      "fund_name": "Invesco India Low Duration Fund",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/invesco-india-low-duration-fund-direct-plan-growth/MLI602",
+      "similarity_score": 0.879952,
+      "metadata": {
+        "aum": 2017.98,
+        "expense_ratio": 0.0032,
+        "sharpe_ratio": 2.12,
+        "beta": 1.15,
+        "std_dev": 0.36
+      }
+    },
+    {
+      "fund_name": "CR Savings Fund - D (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/canara-robeco-savings-fund-direct-plan/MCA250",
+      "similarity_score": 0.873962,
+      "metadata": {
+        "aum": 640.5,
+        "expense_ratio": 0.0021,
+        "sharpe_ratio": 2.07,
+        "beta": 1.18,
+        "std_dev": 0.38
+      }
+    },
+    {
+      "fund_name": "Axis Short Term Fund (G)",
+      "fund_link": "https://www.moneycontrol.com/mutual-funds/nav/axis-short-term-fund-regular-plan/MAA013",
+      "similarity_score": 0.873934,
+      "metadata": {
+        "aum": 4701.3,
+        "expense_ratio": 0.0091,
+        "sharpe_ratio": 0.99,
+        "beta": 1.38,
+        "std_dev": 0.96
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "user_id": "USER_0005",
+  "engineered_vector": [
+    0.9,
+    0.399068,
+    0.1,
+    0.790629,
+    0.798162,
+    0.0,
+    0.556166
+  ],
+  "metadata": {
+    "age": 52,
+    "gender": "F",
+    "occupation": "Salaried",
+    "risk_label": "high",
+    "risk_score": 0.9,
+    "income": 1563963.0,
+    "credit_score": 623,
+    "savings_rate": 0.08,
+    "debt_to_income": 0.1009,
+    "digital_activity": 53.54,
+    "portfolio_diversity": 0.0
+  },
+  "derived_features": {
+    "transaction_volatility": 0.2344,
+    "spending_stability": 0.4461,
+    "credit_utilization": 0.5937,
+    "missed_payments": 2
+  },
+  "notes": "User vector aligned with stock & mutual fund embeddings"
+}
