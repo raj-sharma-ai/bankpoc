@@ -1,86 +1,326 @@
-# integrated_pipeline.py
+# main.py - FastAPI Backend with LLM Integration
 
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Dict, Optional, Any
 import pandas as pd
 import numpy as np
 import json
 import hashlib
 import pickle
-from pathlib import Path
+from datetime import datetime
 import os
-import glob
+import aiohttp
+import asyncio
+import hashlib
+import schedule
+import threading
+import subprocess
+import sys
+from pathlib import Path
+import time
+
+app = FastAPI(title="Financial Recommendation API", version="1.0.0")
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+
+class SchedulerConfig:
+    BASE_DIR = Path(__file__).parent.absolute()
+    
+    # Script paths
+    STOCK_DATA_SCRIPT = str(BASE_DIR / "data_injection" / "stock_data_gathering.py")
+    STOCK_VECTOR_SCRIPT = str(BASE_DIR / "data_injection" / "stock_vector.py")
+
+    
+    FUND_DATA_SCRIPT = str(BASE_DIR / "data_injection"/ "mutual_fund_data_gathering.py")
+    FUND_VECTOR_SCRIPT = str(BASE_DIR /"data_injection"/ "mutualfund_vector.py")
+
+    # ⏰ STOCK SCHEDULING (Daily)
+    STOCK_SCHEDULE_TIME = "02:00"   # daily 2 AM
+
+    # 📅 FUND SCHEDULING (Weekly)
+    FUND_SCHEDULE_DAY = "sunday"    # once a week
+    FUND_SCHEDULE_TIME = "03:00"    # sunday 3 AM
+
+    ENABLED = True
+
+    # Timeout
+    GATHERING_TIMEOUT = 7200
+    VECTOR_TIMEOUT = 1800
+
+
+
+scheduler_status = {
+    "enabled": SchedulerConfig.ENABLED,
+    "last_run": None,
+    "next_run": None,
+    "is_running": False,
+    "last_result": None
+}    
 
 # =====================================================
-# PART 1: USER GENERATION & RISK MODELING
+# OLLAMA LLM CONFIGURATION
 # =====================================================
 
-def generate_basic_synthetic_users(num_users=50):
-    """Generate ONLY basic synthetic user profiles (no risk, no features)"""
-    print(f"Generating {num_users} basic synthetic users...")
-    
-    genders = ['M', 'F']
-    occupations = ['Salaried', 'Self-employed', 'Business', 'Retired']
-    city_tiers = [1, 2, 3]
-    investment_types = ['None', 'Stocks', 'Mutual_Funds', 'Insurance', 'Real_Estate', 
-                       'Stocks_Mutual_Funds', 'Stocks_Insurance']
-    
-    users = []
-    
-    for i in range(1, num_users + 1):
-        user_id = f"USER_{i:04d}"
-        age = np.random.randint(22, 65)
-        gender = np.random.choice(genders)
-        citytier = np.random.choice(city_tiers)
+OLLAMA_API_URL = "http://localhost:11434/api/generate"
+OLLAMA_MODEL = "llama3.1"  # Change to your preferred model
+
+# =====================================================
+# PYDANTIC MODELS
+# =====================================================
+
+class UserProfile(BaseModel):
+    customer_id: str
+    age: int
+    gender: str
+    citytier: int
+    annualincome: float
+    occupation: str
+    creditscore: int
+    avgmonthlyspend: float
+    savingsrate: float
+    investmentamountlastyear: float
+    pastinvestments: str
+
+class UserResponse(BaseModel):
+    user_id: str
+    engineered_vector: List[float]
+    metadata: Dict
+    derived_features: Dict
+    notes: str
+
+class RecommendationResponse(BaseModel):
+    user_id: str
+    user_metadata: Dict
+    top_stock_recommendations: List[Dict]
+    top_mutual_fund_recommendations: List[Dict]
+
+class AdminLog(BaseModel):
+    timestamp: str
+    action: str
+    status: str
+    details: str
+
+class ExplanationRequest(BaseModel):
+    user_profile: Dict
+    top_stocks: List[Dict]
+    top_mutual_funds: List[Dict]
+
+class IndividualExplanationRequest(BaseModel):
+    user_profile: Dict
+    item_type: str  # "stock" or "mutual_fund"
+    item_data: Dict
+
+class ExplanationResponse(BaseModel):
+    explanation: str
+    status: str
+    metadata: Dict
+
+# =====================================================
+# GLOBAL VARIABLES & CACHE
+# =====================================================
+
+users_df = None
+model_data = None
+stocks_data = None
+funds_data = None
+admin_logs = []
+
+
+
+
+
+
+
+#sechuler.py
+
+
+def run_script_background(script_path: str, timeout: int, script_name: str) -> tuple:
+    """Run a Python script in background"""
+    try:
+        if not Path(script_path).exists():
+            return False, f"Script not found: {script_path}"
         
-        if citytier == 1:
-            annualincome = np.random.randint(400000, 2500000)
-        elif citytier == 2:
-            annualincome = np.random.randint(300000, 1200000)
+        result = subprocess.run(
+            [sys.executable, script_path],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+            encoding='utf-8',
+            errors='replace'
+        )
+        
+        if result.returncode == 0:
+            add_log("SCHEDULER", "SUCCESS", f"{script_name} completed")
+            return True, result.stdout
         else:
-            annualincome = np.random.randint(200000, 800000)
-        
-        occupation = np.random.choice(occupations)
-        creditscore = np.random.randint(550, 850)
-        avgmonthlyspend = int(annualincome / 12 * np.random.uniform(0.5, 0.85))
-        savingsrate = round(np.random.uniform(0.05, 0.40), 2)
-        investmentamountlastyear = int(annualincome * np.random.uniform(0.0, 0.15))
-        pastinvestments = np.random.choice(investment_types)
-        
-        user_base = {
-            'customer_id': user_id,
-            'age': age,
-            'gender': gender,
-            'citytier': citytier,
-            'annualincome': annualincome,
-            'occupation': occupation,
-            'creditscore': creditscore,
-            'avgmonthlyspend': avgmonthlyspend,
-            'savingsrate': savingsrate,
-            'investmentamountlastyear': investmentamountlastyear,
-            'pastinvestments': pastinvestments
-        }
-        
-        users.append(user_base)
+            add_log("SCHEDULER", "ERROR", f"{script_name} failed: {result.stderr}")
+            return False, result.stderr
+            
+    except subprocess.TimeoutExpired:
+        add_log("SCHEDULER", "ERROR", f"{script_name} timed out")
+        return False, f"Script timed out after {timeout}s"
+    except Exception as e:
+        add_log("SCHEDULER", "ERROR", f"{script_name} error: {str(e)}")
+        return False, str(e)
+
+
+def run_pipeline_background(data_type: str, gathering_script: str, vector_script: str) -> bool:
+    """Run a complete data pipeline"""
+    add_log("SCHEDULER", "INFO", f"Starting {data_type} pipeline...")
     
-    df = pd.DataFrame(users)
-    print(f"✓ Generated {len(df)} basic synthetic users")
-    return df
+    # Data gathering
+    success, output = run_script_background(
+        gathering_script,
+        SchedulerConfig.GATHERING_TIMEOUT,
+        f"{data_type} Data Gathering"
+    )
+    
+    if not success:
+        return False
+    
+    # Feature engineering
+    success, output = run_script_background(
+        vector_script,
+        SchedulerConfig.VECTOR_TIMEOUT,
+        f"{data_type} Feature Engineering"
+    )
+    
+    return success
 
 
-def save_basic_users_to_csv(df, filename='synthetic_users_basic.csv'):
-    """Save basic users to CSV"""
-    df.to_csv(filename, index=False)
-    print(f"✓ Saved {len(df)} users to {filename}")
-    return filename
+def scheduled_data_refresh():
+    """Main scheduled job - runs all pipelines and refreshes data"""
+    if scheduler_status["is_running"]:
+        add_log("SCHEDULER", "WARNING", "Pipeline already running, skipping...")
+        return
+    
+    scheduler_status["is_running"] = True
+    scheduler_status["last_run"] = datetime.now().isoformat()
+    
+    add_log("SCHEDULER", "INFO", "Starting scheduled data refresh...")
+    
+    results = {
+        "stocks": False,
+        "funds": False,
+        "insurance": False
+    }
+    
+    try:
+        # Run stock pipeline
+        if Path(SchedulerConfig.STOCK_DATA_SCRIPT).exists():
+            results["stocks"] = run_pipeline_background(
+                "stocks",
+                SchedulerConfig.STOCK_DATA_SCRIPT,
+                SchedulerConfig.STOCK_VECTOR_SCRIPT
+            )
+        
+        # Run mutual fund pipeline
+        if Path(SchedulerConfig.FUND_DATA_SCRIPT).exists():
+            results["funds"] = run_pipeline_background(
+                "funds",
+                SchedulerConfig.FUND_DATA_SCRIPT,
+                SchedulerConfig.FUND_VECTOR_SCRIPT
+            )
+        
+        # Run insurance pipeline
+        # if Path(SchedulerConfig.INSURANCE_DATA_SCRIPT).exists():
+        #     results["insurance"] = run_pipeline_background(
+        #         "insurance",
+        #         SchedulerConfig.INSURANCE_DATA_SCRIPT,
+        #         SchedulerConfig.INSURANCE_VECTOR_SCRIPT
+        #     )
+        
+        # Reload data into memory
+        if any(results.values()):
+            load_all_data() 
+            add_log("SCHEDULER", "SUCCESS", "Data refreshed successfully")
+        
+        scheduler_status["last_result"] = results
+        
+    except Exception as e:
+        add_log("SCHEDULER", "ERROR", f"Scheduler error: {str(e)}")
+        scheduler_status["last_result"] = {"error": str(e)}
+    
+    finally:
+        scheduler_status["is_running"] = False
 
 
-def deterministic_random(seed_str, low, high):
-    """Generate deterministic pseudo-random number based on string seed"""
+# def run_scheduler_thread():
+#     """Run scheduler in background thread"""
+#     schedule.every().day.at(SchedulerConfig.SCHEDULE_TIME).do(scheduled_data_refresh)
+    
+#     add_log("SCHEDULER", "INFO", f"Scheduler started - runs daily at {SchedulerConfig.SCHEDULE_TIME}")
+    
+#     while True:
+#         schedule.run_pending()
+#         scheduler_status["next_run"] = str(schedule.next_run()) if schedule.jobs else None
+#         asyncio.run(asyncio.sleep(60))  # Check every 
+
+
+
+def run_scheduler_thread():
+    """Run scheduler in background thread"""
+    # Stock pipeline - Daily
+    schedule.every().day.at(SchedulerConfig.STOCK_SCHEDULE_TIME).do(
+        lambda: run_pipeline_background(
+            "Stock",
+            SchedulerConfig.STOCK_DATA_SCRIPT,
+            SchedulerConfig.STOCK_VECTOR_SCRIPT
+        )
+    )
+    
+    # Fund pipeline - Weekly
+    getattr(schedule.every(), SchedulerConfig.FUND_SCHEDULE_DAY).at(
+        SchedulerConfig.FUND_SCHEDULE_TIME
+    ).do(
+        lambda: run_pipeline_background(
+            "Fund",
+            SchedulerConfig.FUND_DATA_SCRIPT,
+            SchedulerConfig.FUND_VECTOR_SCRIPT
+        )
+    )
+    
+    add_log("SCHEDULER", "INFO", f"Scheduler started - Stock: Daily {SchedulerConfig.STOCK_SCHEDULE_TIME}, Fund: Weekly {SchedulerConfig.FUND_SCHEDULE_DAY} {SchedulerConfig.FUND_SCHEDULE_TIME}")
+    
+    while True:
+        schedule.run_pending()
+        scheduler_status["next_run"] = str(schedule.next_run()) if schedule.jobs else None
+        time.sleep(60)  # 🔥 YE CHANGE KARO - asyncio.sleep nahi, normal sleep!
+
+
+def start_scheduler():
+    """Start scheduler in daemon thread"""
+    if not SchedulerConfig.ENABLED:
+        add_log("SCHEDULER", "INFO", "Scheduler disabled in config")
+        return
+    
+    scheduler_thread = threading.Thread(target=run_scheduler_thread, daemon=True)
+    scheduler_thread.start()
+    add_log("SCHEDULER", "SUCCESS", "Scheduler thread started")
+
+# =====================================================
+# HELPER FUNCTIONS
+# =====================================================
+
+def deterministic_random(seed_str: str, low: float, high: float) -> float:
+    """Generate deterministic pseudo-random number"""
     seed = int(hashlib.md5(seed_str.encode()).hexdigest(), 16) % (10**8)
     np.random.seed(seed)
     return np.random.uniform(low, high)
 
-
-def calculate_derived_features(user_input):
+def calculate_derived_features(user_input: Dict) -> Dict:
     """Calculate derived features for a user"""
     seed_str = f"{user_input['age']}_{user_input['gender']}_{user_input['occupation']}_{user_input['creditscore']}_{user_input['pastinvestments']}"
     
@@ -148,22 +388,8 @@ def calculate_derived_features(user_input):
         'portfoliodiversityscore': portfoliodiversityscore
     }
 
-
-def load_risk_model(model_path='risk_model.pkl'):
-    """Load pre-trained risk model"""
-    try:
-        with open(model_path, 'rb') as f:
-            model_data = pickle.load(f)
-        print(f"✓ Risk model loaded from {model_path}")
-        return model_data
-    except FileNotFoundError:
-        print(f"⚠️  Model file not found: {model_path}")
-        print("Using fallback risk calculation...")
-        return None
-
-
-def predict_user_risk(user_data, model_data):
-    """Predict risk for a single user using loaded model"""
+def predict_user_risk(user_data: Dict, model_data) -> Dict:
+    """Predict risk for a single user"""
     if model_data is None:
         if user_data['creditscore'] >= 750:
             risk_label = 'low'
@@ -177,10 +403,7 @@ def predict_user_risk(user_data, model_data):
         
         return {
             'risk_label': risk_label,
-            'risk_score': risk_score,
-            'confidence_high': 0.33,
-            'confidence_medium': 0.33,
-            'confidence_low': 0.33
+            'risk_score': risk_score
         }
     
     model = model_data['model']
@@ -202,10 +425,6 @@ def predict_user_risk(user_data, model_data):
     X_scaled = scaler.transform(X)
     
     prediction = model.predict(X_scaled)[0]
-    probabilities = model.predict_proba(X_scaled)[0]
-    
-    class_order = label_encoders['target'].classes_
-    prob_dict = dict(zip(class_order, probabilities))
     risk_label = label_encoders['target'].inverse_transform([prediction])[0]
     
     risk_score_map = {'low': 0.3, 'medium': 0.6, 'high': 0.9}
@@ -213,33 +432,18 @@ def predict_user_risk(user_data, model_data):
     
     return {
         'risk_label': risk_label,
-        'risk_score': risk_score,
-        'confidence_high': prob_dict.get('high', 0),
-        'confidence_medium': prob_dict.get('medium', 0),
-        'confidence_low': prob_dict.get('low', 0)
+        'risk_score': risk_score
     }
 
-
-def robust_normalize(value, min_val, max_val):
+def robust_normalize(value: float, min_val: float, max_val: float) -> float:
     """Normalize single value to [0, 1] range"""
     if max_val == min_val:
         return 0.5
     normalized = (value - min_val) / (max_val - min_val)
     return np.clip(normalized, 0, 1)
 
-
-def normalize_age_bucket(age):
-    """Convert age to normalized bucket"""
-    if age <= 30:
-        return 0.3
-    elif age <= 50:
-        return 0.6
-    else:
-        return 0.9
-
-
-def engineer_single_user_vector(user_complete):
-    """Engineer 7-dimensional vector for SINGLE user"""
+def engineer_single_user_vector(user_complete: Dict) -> List[float]:
+    """Engineer 7-dimensional vector for user"""
     
     normalized_risk_score = np.clip(user_complete['risk_score'], 0, 1)
     normalized_income = robust_normalize(user_complete['annualincome'], 200000, 2500000)
@@ -253,31 +457,13 @@ def engineer_single_user_vector(user_complete):
     normalized_credit_score = (user_complete['creditscore'] - credit_min) / (credit_max - credit_min)
     normalized_credit_score = np.clip(normalized_credit_score, 0, 1)
     
-    normalized_age_bucket = normalize_age_bucket(user_complete['age'])
-    
     risk_preference = normalized_risk_score
-    
-    return_expectation = (
-        0.40 * normalized_income +
-        0.35 * normalized_savings_rate +
-        0.25 * normalized_digital_activity
-    )
-    
+    return_expectation = 0.40 * normalized_income + 0.35 * normalized_savings_rate + 0.25 * normalized_digital_activity
     stability_preference = 1 - normalized_risk_score
-    
-    volatility_tolerance = (
-        0.70 * normalized_risk_score +
-        0.30 * normalized_digital_activity
-    )
-    
+    volatility_tolerance = 0.70 * normalized_risk_score + 0.30 * normalized_digital_activity
     market_cap_preference = 1 - normalized_debt_to_income
-    
     dividend_preference = normalized_portfolio_diversity
-    
-    momentum_preference = (
-        0.60 * normalized_digital_activity +
-        0.40 * normalized_credit_score
-    )
+    momentum_preference = 0.60 * normalized_digital_activity + 0.40 * normalized_credit_score
     
     vector = [
         np.clip(risk_preference, 0, 1),
@@ -291,50 +477,417 @@ def engineer_single_user_vector(user_complete):
     
     return vector
 
+def cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
+    """Calculate cosine similarity"""
+    u = np.array(vec1)
+    v = np.array(vec2)
+    
+    dot_product = np.dot(u, v)
+    norm_u = np.linalg.norm(u)
+    norm_v = np.linalg.norm(v)
+    
+    if norm_u == 0 or norm_v == 0:
+        return 0.0
+    
+    return float(dot_product / (norm_u * norm_v))
 
-def process_single_user(user_id, csv_file='synthetic_users_basic.csv', model_path='risk_model.pkl'):
-    """Process a SINGLE user: calculate risk, features, and create JSON"""
+def add_log(action: str, status: str, details: str):
+    """Add admin log"""
+    log = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "action": action,
+        "status": status,
+        "details": details
+    }
+    admin_logs.append(log)
+    if len(admin_logs) > 100:
+        admin_logs.pop(0)
+
+# =====================================================
+# LLM HELPER FUNCTIONS
+# =====================================================
+
+def generate_fallback_explanation(
+    user_profile: Dict,
+    top_stocks: List[Dict],
+    top_mutual_funds: List[Dict]
+) -> str:
+    """Generate rule-based explanation when LLM is unavailable"""
     
-    print(f"\n{'='*60}")
-    print(f"PROCESSING USER: {user_id}")
-    print(f"{'='*60}")
+    risk = user_profile['risk_label'].upper()
+    income = user_profile['income']
+    savings_rate = user_profile['savings_rate'] * 100
     
-    print(f"\n[1] Loading user data from {csv_file}...")
-    df = pd.read_csv(csv_file)
+    explanation = f"""**Why These Recommendations Match Your Profile:**
+
+• **Risk Alignment**: Your {risk} risk profile has been carefully matched with investments that suit your risk tolerance and financial goals.
+
+• **Income-Based Selection**: With an annual income of ₹{income:,.0f} and a savings rate of {savings_rate:.1f}%, these options are sized appropriately for your financial capacity.
+
+• **Diversification**: The recommendations span multiple sectors and categories to help balance your portfolio and reduce concentration risk.
+
+• **Match Quality**: All recommendations have high similarity scores (80%+), indicating strong alignment with your complete financial profile.
+
+⚠️ **Important**: Past performance doesn't guarantee future returns. Market investments carry risk - please consult a financial advisor before making investment decisions."""
     
-    user_row = df[df['customer_id'] == user_id]
+    return explanation
+
+async def generate_llm_explanation(
+    user_profile: Dict,
+    top_stocks: List[Dict],
+    top_mutual_funds: List[Dict]
+) -> str:
+    """Generate explanation using Ollama LLM"""
+    
+    # Format stocks for prompt
+    stocks_text = "\n".join([
+        f"- {s['symbol']} ({s['company_name']}): Match Score {s['similarity_score']*100:.1f}%, "
+        f"Sector: {s['metadata'].get('sector', 'N/A')}"
+        for s in top_stocks[:5]
+    ])
+    
+    # Format mutual funds for prompt
+    funds_text = "\n".join([
+        f"- {f['fund_name'][:60]}: Match Score {f['similarity_score']*100:.1f}%, "
+        f"Category: {f['metadata'].get('category', 'N/A')}"
+        for f in top_mutual_funds[:5]
+    ])
+    
+    # Create the prompt
+    prompt = f"""You are a financial insights assistant inside Raj's investment app.
+Your task is to explain WHY the recommended stocks and mutual funds match the user's profile.
+
+Guidelines:
+- Use simple, human-friendly language.
+- Explain in short bullet points (4-6 points maximum).
+- Mention factors like risk level, volatility, goal alignment, sector stability, and past consistency.
+- Never give financial advice or guaranteed returns.
+- Keep the answer within 6-7 lines total.
+- Add 1-2 generic caution notes about market risk at the end.
+
+User Profile:
+- Age: {user_profile['age']} years
+- Occupation: {user_profile['occupation']}
+- Risk Profile: {user_profile['risk_label'].upper()}
+- Risk Score: {user_profile['risk_score']}
+- Annual Income: ₹{user_profile['income']:,.0f}
+- Credit Score: {user_profile['credit_score']}
+- Savings Rate: {user_profile['savings_rate']*100:.1f}%
+- Debt-to-Income Ratio: {user_profile['debt_to_income']*100:.1f}%
+- Digital Activity Score: {user_profile['digital_activity']:.0f}/100
+- Portfolio Diversity Score: {user_profile['portfolio_diversity']:.0f}/100
+
+Top Stock Recommendations:
+{stocks_text}
+
+Top Mutual Fund Recommendations:
+{funds_text}
+
+Provide a clear, short explanation the user can understand. Focus on why these recommendations suit their profile."""
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            payload = {
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.7,
+                    "top_p": 0.9,
+                    "max_tokens": 500
+                }
+            }
+            
+            async with session.post(OLLAMA_API_URL, json=payload, timeout=aiohttp.ClientTimeout(total=60)) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    explanation = result.get('response', '').strip()
+                    
+                    if not explanation:
+                        return generate_fallback_explanation(user_profile, top_stocks, top_mutual_funds)
+                    
+                    return explanation
+                else:
+                    add_log("LLM_EXPLAIN", "ERROR", f"Ollama API error: {response.status}")
+                    return generate_fallback_explanation(user_profile, top_stocks, top_mutual_funds)
+    
+    except asyncio.TimeoutError:
+        add_log("LLM_EXPLAIN", "ERROR", "Ollama API timeout")
+        return generate_fallback_explanation(user_profile, top_stocks, top_mutual_funds)
+    
+    except Exception as e:
+        add_log("LLM_EXPLAIN", "ERROR", f"Ollama error: {str(e)}")
+        return generate_fallback_explanation(user_profile, top_stocks, top_mutual_funds)
+
+async def generate_individual_llm_explanation(
+    user_profile: Dict,
+    item_type: str,
+    item_data: Dict
+) -> str:
+    """Generate explanation for individual stock or mutual fund"""
+    
+    # Format item details based on type
+    if item_type == "stock":
+        item_name = f"{item_data.get('symbol', 'N/A')} ({item_data.get('company_name', 'N/A')})"
+        item_details = f"""
+Stock Details:
+- Symbol: {item_data.get('symbol', 'N/A')}
+- Company: {item_data.get('company_name', 'N/A')}
+- Match Score: {item_data.get('similarity_score', 0)*100:.1f}%
+- Sector: {item_data.get('metadata', {}).get('sector', 'N/A')}
+- Market Cap: {item_data.get('metadata', {}).get('market_cap', 'N/A')}
+"""
+    else:  # mutual_fund
+        item_name = item_data.get('fund_name', 'N/A')
+        item_details = f"""
+Mutual Fund Details:
+- Fund Name: {item_data.get('fund_name', 'N/A')}
+- Match Score: {item_data.get('similarity_score', 0)*100:.1f}%
+- Category: {item_data.get('metadata', {}).get('category', 'N/A')}
+- AUM: ₹{item_data.get('metadata', {}).get('aum', 'N/A')} Cr
+"""
+    
+    prompt = f"""You are a financial insights assistant inside Raj's investment app.
+Your task is to explain WHY this specific {item_type.replace('_', ' ')} is recommended for this user.
+
+Guidelines:
+- Use simple, human-friendly language.
+- Explain in 3-4 short bullet points.
+- Focus on why THIS specific investment matches the user's profile.
+- Mention the match score and what makes it a good fit.
+- Never give financial advice or guaranteed returns.
+- Keep it brief and focused (4-5 lines total).
+- Add 1 generic caution note about market risk at the end.
+
+User Profile:
+- Age: {user_profile['age']} years
+- Occupation: {user_profile['occupation']}
+- Risk Profile: {user_profile['risk_label'].upper()}
+- Risk Score: {user_profile['risk_score']}
+- Annual Income: ₹{user_profile['income']:,.0f}
+- Credit Score: {user_profile['credit_score']}
+- Savings Rate: {user_profile['savings_rate']*100:.1f}%
+- Debt-to-Income Ratio: {user_profile['debt_to_income']*100:.1f}%
+- Portfolio Diversity Score: {user_profile['portfolio_diversity']:.0f}/100
+
+{item_details}
+
+Explain specifically why {item_name} is recommended for this user. Focus on the match and alignment with their profile."""
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            payload = {
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.7,
+                    "top_p": 0.9,
+                    "max_tokens": 300
+                }
+            }
+            
+            async with session.post(OLLAMA_API_URL, json=payload, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    explanation = result.get('response', '').strip()
+                    
+                    if not explanation:
+                        return generate_fallback_individual_explanation(user_profile, item_type, item_data)
+                    
+                    return explanation
+                else:
+                    add_log("LLM_INDIVIDUAL", "ERROR", f"Ollama API error: {response.status}")
+                    return generate_fallback_individual_explanation(user_profile, item_type, item_data)
+    
+    except asyncio.TimeoutError:
+        add_log("LLM_INDIVIDUAL", "ERROR", "Ollama API timeout")
+        return generate_fallback_individual_explanation(user_profile, item_type, item_data)
+    
+    except Exception as e:
+        add_log("LLM_INDIVIDUAL", "ERROR", f"Ollama error: {str(e)}")
+        return generate_fallback_individual_explanation(user_profile, item_type, item_data)
+
+def generate_fallback_individual_explanation(
+    user_profile: Dict,
+    item_type: str,
+    item_data: Dict
+) -> str:
+    """Generate rule-based explanation for individual item when LLM is unavailable"""
+    
+    risk = user_profile['risk_label'].upper()
+    match_score = item_data.get('similarity_score', 0) * 100
+    
+    if item_type == "stock":
+        item_name = f"{item_data.get('symbol', 'N/A')} ({item_data.get('company_name', 'N/A')})"
+        sector = item_data.get('metadata', {}).get('sector', 'N/A')
+        
+        explanation = f"""**Why {item_name} is Recommended:**
+
+• **High Match Score**: With a {match_score:.1f}% match score, this stock aligns well with your {risk} risk profile and financial goals.
+
+• **Sector Alignment**: The {sector} sector is suitable for your investment profile and provides appropriate exposure for your risk tolerance.
+
+• **Profile Compatibility**: This stock's characteristics match your financial metrics including income level, savings rate, and investment experience.
+
+⚠️ **Important**: Stock market investments carry risk. Past performance is not indicative of future results."""
+    
+    else:  # mutual_fund
+        item_name = item_data.get('fund_name', 'N/A')[:60]
+        category = item_data.get('metadata', {}).get('category', 'N/A')
+        
+        explanation = f"""**Why {item_name} is Recommended:**
+
+• **High Match Score**: With a {match_score:.1f}% match score, this fund aligns well with your {risk} risk profile and investment objectives.
+
+• **Category Fit**: The {category} category is appropriate for your financial situation and provides suitable diversification.
+
+• **Profile Compatibility**: This fund's investment strategy matches your risk tolerance, income level, and long-term financial goals.
+
+⚠️ **Important**: Mutual fund investments are subject to market risks. Please read the offer document carefully."""
+    
+    return explanation
+
+
+
+@app.on_event("startup")
+async def load_all_data():
+    """Load data on startup"""
+    global users_df, model_data, stocks_data, funds_data, insurance_data
+
+    try:
+        # ... existing data loading code ...
+        
+        add_log("STARTUP", "SUCCESS", "API initialized successfully")
+        
+        # 🔥 YE LINE ADD KARO BRO!
+        start_scheduler()  # Start the background scheduler
+        
+    except Exception as e:
+        add_log("STARTUP", "ERROR", str(e))
+    
+    try:
+        if os.path.exists('reco_dummy_gpt.csv'):
+            users_df = pd.read_csv('reco_dummy_gpt.csv')
+            add_log("STARTUP", "SUCCESS", f"Loaded {len(users_df)} users from CSV")
+        else:
+            add_log("STARTUP", "WARNING", "Users CSV not found")
+        
+        if os.path.exists('risk_model.pkl'):
+            with open('risk_model.pkl', 'rb') as f:
+                model_data = pickle.load(f)
+            add_log("STARTUP", "SUCCESS", "Risk model loaded")
+        else:
+            add_log("STARTUP", "WARNING", "Risk model not found, using fallback")
+        
+        if os.path.exists('engineered_stocks.json'):
+            with open('engineered_stocks.json', 'r') as f:
+                stocks_data = json.load(f)
+            add_log("STARTUP", "SUCCESS", f"Loaded {len(stocks_data)} stocks")
+        else:
+            add_log("STARTUP", "WARNING", "Stocks JSON not found")
+        
+        if os.path.exists('engineered_funds.json'):
+            with open('engineered_funds.json', 'r') as f:
+                funds_data = json.load(f)
+            add_log("STARTUP", "SUCCESS", f"Loaded {len(funds_data)} funds")
+        else:
+            add_log("STARTUP", "WARNING", "Funds JSON not found")
+        
+        # Load Insurance Data
+        if os.path.exists('engineered_insurance.json'):
+            with open('engineered_insurance.json', 'r') as f:
+                insurance_data = json.load(f)
+            add_log("STARTUP", "SUCCESS", f"Loaded {len(insurance_data)} insurance products")
+        else:
+            add_log("STARTUP", "WARNING", "Insurance JSON not found")
+            insurance_data = []  # Initialize as empty list if file not found
+        
+        add_log("STARTUP", "SUCCESS", "API initialized successfully")
+        
+    except Exception as e:
+        add_log("STARTUP", "ERROR", str(e))
+
+# =====================================================
+# API ENDPOINTS
+# =====================================================
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {
+        "message": "Financial Recommendation API",
+        "version": "1.0.0",
+        "scheduler": {
+            "enabled": scheduler_status["enabled"],
+            "next_run": scheduler_status["next_run"],
+            "last_run": scheduler_status["last_run"]
+        },
+        "endpoints": {
+            "users": "/api/users",
+            "user_profile": "/api/user/{user_id}",
+            "recommendations": "/api/recommendations/{user_id}",
+            "explain": "/api/explain",
+            "explain_individual": "/api/explain-individual",
+            "llm_health": "/api/llm/health",
+            "admin_logs": "/api/admin/logs"
+        }
+    }
+
+
+
+@app.get("/api/scheduler/status")
+async def get_scheduler_status():
+    """Get scheduler status"""
+    return scheduler_status
+
+@app.post("/api/scheduler/trigger")
+async def trigger_scheduler(background_tasks: BackgroundTasks):
+    """Manually trigger data refresh"""
+    if scheduler_status["is_running"]:
+        raise HTTPException(status_code=409, detail="Pipeline already running")
+    
+    background_tasks.add_task(scheduled_data_refresh)
+    return {"status": "triggered", "message": "Data refresh started in background"}
+
+@app.get("/api/users")
+async def get_all_users():
+    """Get list of all users"""
+    if users_df is None:
+        raise HTTPException(status_code=404, detail="Users data not loaded")
+    
+    users_list = users_df.replace({np.nan: None}).to_dict('records')
+    add_log("GET_USERS", "SUCCESS", f"Retrieved {len(users_list)} users")
+    
+    return {
+        "total_users": len(users_list),
+        "users": users_list
+    }
+
+@app.get("/api/user/{user_id}")
+async def get_user_profile(user_id: int):
+    """Get complete user profile with risk analysis"""
+    if users_df is None:
+        raise HTTPException(status_code=404, detail="Users data not loaded")
+    
+    user_row = users_df[users_df['customer_id'] == user_id]
     
     if user_row.empty:
-        print(f"❌ User {user_id} not found!")
-        return None
+        add_log("GET_USER", "ERROR", f"User {user_id} not found")
+        raise HTTPException(status_code=404, detail=f"User {user_id} not found")
     
     user_base = user_row.iloc[0].to_dict()
-    print(f"✓ Found user: {user_id}")
-    print(f"   Age: {user_base['age']}, Gender: {user_base['gender']}")
-    print(f"   Occupation: {user_base['occupation']}, Credit: {user_base['creditscore']}")
     
-    print(f"\n[2] Calculating derived features...")
     derived_features = calculate_derived_features(user_base)
-    print(f"✓ Calculated {len(derived_features)} derived features")
-    
     user_complete = {**user_base, **derived_features}
     
-    print(f"\n[3] Predicting risk...")
-    model_data = load_risk_model(model_path)
     risk_pred = predict_user_risk(user_complete, model_data)
-    
     user_complete['risk_label'] = risk_pred['risk_label']
     user_complete['risk_score'] = risk_pred['risk_score']
     
-    print(f"✓ Risk Label: {risk_pred['risk_label'].upper()}")
-    print(f"✓ Risk Score: {risk_pred['risk_score']}")
-    
-    print(f"\n[4] Engineering 7D preference vector...")
     vector = engineer_single_user_vector(user_complete)
-    print(f"✓ Vector: {[round(v, 4) for v in vector]}")
     
-    print(f"\n[5] Creating JSON output...")
-    user_json = {
+    result = {
         "user_id": str(user_complete['customer_id']),
         "engineered_vector": [round(float(v), 6) for v in vector],
         "metadata": {
@@ -356,269 +909,257 @@ def process_single_user(user_id, csv_file='synthetic_users_basic.csv', model_pat
             "credit_utilization": round(float(user_complete['creditutilizationratio']), 4),
             "missed_payments": int(user_complete['missedpaymentcount'])
         },
-        "notes": "User vector aligned with stock & mutual fund embeddings"
+        "notes": "User vector aligned with stock, mutual fund, and insurance embeddings"
     }
     
-    output_file = f"user_{user_id}_profile.json"
-    with open(output_file, 'w') as f:
-        json.dump(user_json, f, indent=2)
+    add_log("GET_USER", "SUCCESS", f"Retrieved profile for {user_id}")
+    return result
+
+@app.get("/api/recommendations/{user_id}")
+async def get_recommendations(user_id: int, top_k: int = 10):
+    """Get stock, mutual fund, and insurance recommendations for a user"""
     
-    print(f"✓ Saved to {output_file}")
-    print(f"\n{'='*60}")
-    print(f"✓ USER PROCESSING COMPLETED!")
-    print(f"{'='*60}")
+    if stocks_data is None or funds_data is None:
+        raise HTTPException(status_code=404, detail="Stocks or Funds data not loaded")
     
-    return user_json
-
-
-# =====================================================
-# PART 2: RECOMMENDATION ENGINE
-# =====================================================
-
-def load_json(file_path):
-    """Load JSON data from file"""
-    with open(file_path, 'r') as f:
-        return json.load(f)
-
-
-def cosine_similarity(vec1, vec2):
-    """Calculate cosine similarity between two vectors"""
-    u = np.array(vec1)
-    v = np.array(vec2)
+    user_profile = await get_user_profile(user_id)
+    user_vector = user_profile['engineered_vector']
     
-    dot_product = np.dot(u, v)
-    norm_u = np.linalg.norm(u)
-    norm_v = np.linalg.norm(v)
-    
-    if norm_u == 0 or norm_v == 0:
-        return 0.0
-    
-    similarity = dot_product / (norm_u * norm_v)
-    return float(similarity)
-
-
-def get_stock_recommendations(user_vector, stocks, top_k=10):
-    """Calculate cosine similarity between user and all stocks"""
-    recommendations = []
-    
-    for stock in stocks:
+    # Stock Recommendations
+    stock_recommendations = []
+    for stock in stocks_data:
         stock_vector = stock['engineered_vector']
         similarity = cosine_similarity(user_vector, stock_vector)
         
-        recommendations.append({
+        stock_recommendations.append({
             'symbol': stock['symbol'],
             'company_name': stock.get('company_name', ''),
             'similarity_score': round(similarity, 6),
             'metadata': stock.get('metadata', {})
         })
     
-    recommendations.sort(key=lambda x: x['similarity_score'], reverse=True)
-    return recommendations[:top_k]
-
-
-def get_mutual_fund_recommendations(user_vector, mutual_funds, top_k=10):
-    """Calculate cosine similarity between user and all mutual funds"""
-    recommendations = []
+    stock_recommendations.sort(key=lambda x: x['similarity_score'], reverse=True)
+    stock_recommendations = stock_recommendations[:top_k]
     
-    for fund in mutual_funds:
+    # Mutual Fund Recommendations
+    fund_recommendations = []
+    for fund in funds_data:
         fund_vector = fund['engineered_vector']
         similarity = cosine_similarity(user_vector, fund_vector)
         
-        recommendations.append({
+        fund_recommendations.append({
             'fund_name': fund['fund_name'],
             'fund_link': fund.get('fund_link', ''),
             'similarity_score': round(similarity, 6),
             'metadata': fund.get('metadata', {})
         })
     
-    recommendations.sort(key=lambda x: x['similarity_score'], reverse=True)
-    return recommendations[:top_k]
-
-
-def generate_recommendations_for_user(user_json, stocks_json_path, mutual_funds_json_path, top_k=10):
-    """Generate recommendations for a specific user JSON"""
+    fund_recommendations.sort(key=lambda x: x['similarity_score'], reverse=True)
+    fund_recommendations = fund_recommendations[:top_k]
     
-    print(f"\n{'='*60}")
-    print(f"GENERATING RECOMMENDATIONS FOR {user_json['user_id']}")
-    print(f"{'='*60}")
+    # Insurance Recommendations (with error handling)
+    insurance_recommendations = []
+    if insurance_data and len(insurance_data) > 0:
+        try:
+            for insurance in insurance_data:
+                # Get vector safely
+                insurance_vector = insurance.get('engineered_vector')
+                if insurance_vector is None:
+                    continue
+                
+                similarity = cosine_similarity(user_vector, insurance_vector)
+                
+                # Handle different possible key names flexibly
+                insurance_name = (
+                    insurance.get('policy_name') or 
+                    insurance.get('insurance_name') or 
+                    insurance.get('name') or 
+                    insurance.get('product_name') or 
+                    'Unknown Insurance'
+                )
+                
+                insurer = insurance.get('insurer', 'N/A')
+                
+                # Determine insurance type based on covers and features
+                insurance_type = 'Health Insurance'
+                if insurance.get('critical_illness_cover'):
+                    insurance_type = 'Health + Critical Illness'
+                
+                # Extract premium info
+                premium_info = insurance.get('premium_amount_range', 'Varies')
+                sum_insured = insurance.get('sum_insured_range', 'Check policy')
+                
+                # Build metadata
+                metadata = {
+                    'insurer': insurer,
+                    'url': insurance.get('url', ''),
+                    'premium_range': premium_info,
+                    'sum_insured': sum_insured,
+                    'waiting_period_general': insurance.get('waiting_period_general', 'N/A'),
+                    'waiting_period_preexisting': insurance.get('waiting_period_preexisting', 'N/A'),
+                    'covers_preexisting': insurance.get('covers_preexisting', False),
+                    'maternity_cover': insurance.get('maternity_cover', False),
+                    'critical_illness_cover': insurance.get('critical_illness_cover', False),
+                    'opd_cover': insurance.get('opd_cover', False),
+                    'network_hospitals': insurance.get('network_hospitals', 'N/A'),
+                    'no_claim_bonus': insurance.get('no_claim_bonus', 'N/A'),
+                    'features': insurance.get('features', {})
+                }
+                
+                insurance_recommendations.append({
+                    'insurance_name': insurance_name,
+                    'insurance_type': insurance_type,
+                    'similarity_score': round(similarity, 6),
+                    'metadata': metadata
+                })
+            
+            insurance_recommendations.sort(key=lambda x: x['similarity_score'], reverse=True)
+            insurance_recommendations = insurance_recommendations[:top_k]
+            
+        except Exception as e:
+            add_log("GET_RECOMMENDATIONS", "WARNING", f"Error processing insurance: {str(e)}")
+            insurance_recommendations = []
+    
+    result = {
+        "user_id": user_profile['user_id'],
+        "user_metadata": user_profile['metadata'],
+        "top_stock_recommendations": stock_recommendations,
+        "top_mutual_fund_recommendations": fund_recommendations,
+        "top_insurance_recommendations": insurance_recommendations
+    }
+    
+    add_log("GET_RECOMMENDATIONS", "SUCCESS", f"Generated recommendations for {user_id}")
+    return result
+
+@app.post("/api/explain")
+async def explain_recommendations(request: ExplanationRequest):
+    """Generate LLM explanation for recommendations"""
     
     try:
-        user_vector = user_json['engineered_vector']
+        add_log("EXPLAIN", "PROCESSING", f"Generating explanation for user")
         
-        print(f"\n[1] Loading stocks from: {stocks_json_path}")
-        stocks = load_json(stocks_json_path)
-        print(f"   ✓ Loaded {len(stocks)} stocks")
+        explanation = await generate_llm_explanation(
+            user_profile=request.user_profile,
+            top_stocks=request.top_stocks,
+            top_mutual_funds=request.top_mutual_funds
+        )
         
-        print(f"\n[2] Loading mutual funds from: {mutual_funds_json_path}")
-        mutual_funds = load_json(mutual_funds_json_path)
-        print(f"   ✓ Loaded {len(mutual_funds)} mutual funds")
+        add_log("EXPLAIN", "SUCCESS", "Explanation generated successfully")
         
-        print(f"\n[3] Calculating stock recommendations...")
-        stock_recommendations = get_stock_recommendations(user_vector, stocks, top_k)
-        print(f"   ✓ Found top {len(stock_recommendations)} stock matches")
-        
-        print(f"\n[4] Calculating mutual fund recommendations...")
-        fund_recommendations = get_mutual_fund_recommendations(user_vector, mutual_funds, top_k)
-        print(f"   ✓ Found top {len(fund_recommendations)} mutual fund matches")
-        
-        result = {
-            "user_id": user_json['user_id'],
-            "user_metadata": user_json.get('metadata', {}),
-            "top_stock_recommendations": stock_recommendations,
-            "top_mutual_fund_recommendations": fund_recommendations
+        return {
+            "explanation": explanation,
+            "status": "success",
+            "metadata": {
+                "model": OLLAMA_MODEL,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "user_risk": request.user_profile['risk_label']
+            }
         }
+    
+    except Exception as e:
+        add_log("EXPLAIN", "ERROR", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/explain-individual")
+async def explain_individual_recommendation(request: IndividualExplanationRequest):
+    """Generate LLM explanation for individual stock or mutual fund"""
+    
+    try:
+        add_log("EXPLAIN_INDIVIDUAL", "PROCESSING", 
+                f"Generating explanation for {request.item_type}")
         
-        output_path = f"recommendations_{user_json['user_id']}.json"
-        print(f"\n[5] Saving recommendations to: {output_path}")
-        with open(output_path, 'w') as f:
-            json.dump(result, f, indent=2)
+        explanation = await generate_individual_llm_explanation(
+            user_profile=request.user_profile,
+            item_type=request.item_type,
+            item_data=request.item_data
+        )
         
-        print(f"   ✓ Recommendations saved successfully")
+        add_log("EXPLAIN_INDIVIDUAL", "SUCCESS", 
+                f"Explanation generated for {request.item_type}")
         
-        # Print summary
-        print("\n" + "="*60)
-        print("RECOMMENDATION SUMMARY")
-        print("="*60)
-        print(f"User ID: {result['user_id']}")
-        print(f"Risk Level: {result['user_metadata'].get('risk_label', 'N/A').upper()}")
-        print(f"Income: ₹{result['user_metadata'].get('income', 0):,.0f}")
+        return {
+            "explanation": explanation,
+            "status": "success",
+            "metadata": {
+                "model": OLLAMA_MODEL,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "item_type": request.item_type,
+                "user_risk": request.user_profile['risk_label']
+            }
+        }
+    
+    except Exception as e:
+        add_log("EXPLAIN_INDIVIDUAL", "ERROR", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/llm/health")
+async def check_llm_health():
+    """Check if Ollama is running and accessible"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:11434/api/tags", timeout=aiohttp.ClientTimeout(total=5)) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    models = [m['name'] for m in data.get('models', [])]
+                    return {
+                        "status": "online",
+                        "available_models": models,
+                        "configured_model": OLLAMA_MODEL
+                    }
+                else:
+                    return {"status": "error", "message": "Ollama API not responding"}
+    except Exception as e:
+        return {"status": "offline", "message": str(e)}
+
+@app.get("/api/admin/logs")
+async def get_admin_logs():
+    """Get admin logs"""
+    return {
+        "total_logs": len(admin_logs),
+        "logs": admin_logs
+    }
+
+@app.post("/api/admin/refresh-data")
+async def refresh_data(background_tasks: BackgroundTasks):
+    """Refresh data from files"""
+    try:
+        global users_df, model_data, stocks_data, funds_data
         
-        print(f"\n📈 TOP {min(5, len(stock_recommendations))} STOCK RECOMMENDATIONS:")
-        for i, stock in enumerate(stock_recommendations[:5], 1):
-            print(f"{i}. {stock['symbol']} - {stock['company_name']}")
-            print(f"   Similarity: {stock['similarity_score']:.4f}")
-            print(f"   Sector: {stock['metadata'].get('sector', 'N/A')}")
+        if os.path.exists('reco_dummy_gpt.csv'):
+            users_df = pd.read_csv('reco_dummy_gpt.csv')
+            add_log("REFRESH", "SUCCESS", f"Reloaded {len(users_df)} users")
         
-        print(f"\n📊 TOP {min(5, len(fund_recommendations))} MUTUAL FUND RECOMMENDATIONS:")
-        for i, fund in enumerate(fund_recommendations[:5], 1):
-            print(f"{i}. {fund['fund_name'][:50]}")
-            print(f"   Similarity: {fund['similarity_score']:.4f}")
+        if os.path.exists('engineered_stocks.json'):
+            with open('engineered_stocks.json', 'r') as f:
+                stocks_data = json.load(f)
+            add_log("REFRESH", "SUCCESS", f"Reloaded {len(stocks_data)} stocks")
         
-        print("\n" + "="*60)
-        print("✓ RECOMMENDATIONS GENERATED SUCCESSFULLY!")
-        print("="*60)
+        if os.path.exists('engineered_funds.json'):
+            with open('engineered_funds.json', 'r') as f:
+                funds_data = json.load(f)
+            add_log("REFRESH", "SUCCESS", f"Reloaded {len(funds_data)} funds")
         
-        return result
+        return {"status": "success", "message": "Data refreshed successfully"}
         
     except Exception as e:
-        print(f"\n✗ Error: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return None
+        add_log("REFRESH", "ERROR", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/stats")
+async def get_statistics():
+    """Get system statistics"""
+    return {
+        "users_loaded": len(users_df) if users_df is not None else 0,
+        "stocks_loaded": len(stocks_data) if stocks_data is not None else 0,
+        "funds_loaded": len(funds_data) if funds_data is not None else 0,
+        "model_loaded": model_data is not None,
+        "total_logs": len(admin_logs)
+    }
 
 # =====================================================
-# MAIN INTEGRATED PIPELINE
+# RUN SERVER
 # =====================================================
 
 if __name__ == "__main__":
-    
-    print("\n" + "="*70)
-    print("   INTEGRATED FINANCIAL RECOMMENDATION PIPELINE")
-    print("="*70)
-    
-    # Check if stocks and funds JSON exist
-    stocks_json = "engineered_stocks.json"
-    funds_json = "engineered_funds.json"
-    
-    if not os.path.exists(stocks_json):
-        print(f"\n❌ ERROR: {stocks_json} not found!")
-        print("Please ensure the stocks JSON file exists.")
-        exit(1)
-    
-    if not os.path.exists(funds_json):
-        print(f"\n❌ ERROR: {funds_json} not found!")
-        print("Please ensure the mutual funds JSON file exists.")
-        exit(1)
-    
-    # ============ STEP 1: Generate Basic Users ============
-    print("\n[STEP 1] Generate Basic Synthetic Users")
-    print("-" * 70)
-    
-    NUM_USERS = 50
-    csv_file = 'synthetic_users_basic.csv'
-    
-    # Check if CSV already exists
-    if os.path.exists(csv_file):
-        print(f"✓ Found existing {csv_file}")
-        df_basic = pd.read_csv(csv_file)
-        print(f"✓ Loaded {len(df_basic)} users")
-    else:
-        df_basic = generate_basic_synthetic_users(NUM_USERS)
-        save_basic_users_to_csv(df_basic, csv_file)
-    
-    print("\n📋 Available Users (first 10):")
-    for i in range(min(10, len(df_basic))):
-        user = df_basic.iloc[i]
-        print(f"   {i+1}. {user['customer_id']}: Age {user['age']}, {user['occupation']}, Credit {user['creditscore']}")
-    
-    # ============ STEP 2: User Processing & Recommendations ============
-    print("\n\n[STEP 2] Process User & Generate Recommendations")
-    print("-" * 70)
-    
-    while True:
-        try:
-            user_input = input("\n👤 Enter User ID (e.g., USER_0001) or 'exit' to quit: ").strip()
-            
-            if user_input.lower() == 'exit':
-                print("\n👋 Exiting pipeline. Goodbye!")
-                break
-            
-            if user_input not in df_basic['customer_id'].values:
-                print(f"❌ User '{user_input}' not found! Please choose from the list above.")
-                continue
-            
-            # STEP 2A: Process User (Risk Model)
-            print(f"\n{'='*70}")
-            print(f"STEP 2A: RISK ANALYSIS FOR {user_input}")
-            print(f"{'='*70}")
-            
-            user_json = process_single_user(
-                user_id=user_input,
-                csv_file=csv_file,
-                model_path='risk_model.pkl'
-            )
-            
-            if not user_json:
-                print(f"❌ Failed to process user {user_input}")
-                continue
-            
-            # STEP 2B: Generate Recommendations
-            print(f"\n{'='*70}")
-            print(f"STEP 2B: RECOMMENDATIONS FOR {user_input}")
-            print(f"{'='*70}")
-            
-            recommendations = generate_recommendations_for_user(
-                user_json=user_json,
-                stocks_json_path=stocks_json,
-                mutual_funds_json_path=funds_json,
-                top_k=10
-            )
-            
-            if recommendations:
-                print(f"\n✅ PIPELINE COMPLETED SUCCESSFULLY FOR {user_input}!")
-                print(f"\n📁 Generated Files:")
-                print(f"   1. user_{user_input}_profile.json (Risk Profile)")
-                print(f"   2. recommendations_{user_input}.json (Recommendations)")
-            
-            # Ask to process another
-            another = input("\n🔄 Process another user? (y/n): ").strip().lower()
-            if another != 'y':
-                print("\n👋 Pipeline completed. Goodbye!")
-                break
-                
-        except KeyboardInterrupt:
-            print("\n\n👋 Pipeline interrupted. Goodbye!")
-            break
-        except Exception as e:
-            print(f"\n❌ Error: {e}")
-            print("Please try again.")
-    
-    print("\n" + "="*70)
-    print("PIPELINE SUMMARY:")
-    print("="*70)
-    print("✓ synthetic_users_basic.csv - All basic user data")
-    print("✓ user_[ID]_profile.json - Individual user risk profiles")
-    print("✓ recommendations_[ID].json - Personalized recommendations")
-    print("\nThank you for using the Financial Recommendation Pipeline!")
-    print("="*70)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
