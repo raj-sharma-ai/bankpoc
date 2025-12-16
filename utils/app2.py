@@ -11,7 +11,10 @@ from datetime import datetime
 # CONFIGURATION
 # =====================================================
 
-API_BASE_URL = "http://localhost:8000"
+# API_BASE_URL = "http://localhost:8000"
+
+
+API_BASE_URL = "https://bankpoc-2.onrender.com"
 
 st.set_page_config(
     page_title="Financial Recommendation System",
