@@ -867,9 +867,11 @@ def load_insurance_prediction_models():
     global insurance_model, insurance_scaler, insurance_label_encoder, insurance_feature_names, health_policies, insurance_users_df
     
     try:
+        BASE_DIR = Path(__file__).resolve().parent
         # 🔥 TRY MULTIPLE CSV FILE PATHS
         csv_paths = [
-            'test_users_BANK.csv',
+            # 'test_users_BANK.csv',
+            BASE_DIR / "test_users_BANK.csv",
         ]
         
         csv_loaded = False
@@ -893,7 +895,7 @@ def load_insurance_prediction_models():
         # 🔥 UPDATED - Check models/ folder too
         model_paths = [
             # 'xgb_model_synthetic.pkl',
-            'xgb_model_synthetic.pkl'
+          BASE_DIR / "xgb_model_synthetic.pkl"
         ]
         model_loaded = False
         for model_path in model_paths:
@@ -911,7 +913,7 @@ def load_insurance_prediction_models():
         # 🔥 UPDATED - Check models/ folder too
         scaler_paths = [
             # 'xgb_scaler_synthetic.pkl',
-            'xgb_scaler_synthetic.pkl'
+            BASE_DIR / "xgb_scaler_synthetic.pkl"
         ]
         scaler_loaded = False
         for scaler_path in scaler_paths:
@@ -929,7 +931,7 @@ def load_insurance_prediction_models():
         # 🔥 UPDATED - Check models/ folder too
         encoder_paths = [
             # 'xgb_label_encoder_synthetic.pkl',
-            'xgb_label_encoder_synthetic.pkl'
+            BASE_DIR / "xgb_label_encoder_synthetic.pkl"
         ]
         encoder_loaded = False
         for encoder_path in encoder_paths:
@@ -947,7 +949,7 @@ def load_insurance_prediction_models():
         # 🔥 UPDATED - Check models/ folder too
         feature_paths = [
             # 'xgb_feature_names_synthetic.pkl',
-            'xgb_feature_names_synthetic.pkl'
+            BASE_DIR / "xgb_feature_names_synthetic.pkl"
         ]
         feature_loaded = False
         for feature_path in feature_paths:
@@ -964,7 +966,7 @@ def load_insurance_prediction_models():
         
         # 🔥 UPDATED - Check data/ folder too
         health_policy_paths = [
-            'health_policies.json',
+            BASE_DIR / "health_policies.json",
             # 'health_policies.json'
         ]
         
