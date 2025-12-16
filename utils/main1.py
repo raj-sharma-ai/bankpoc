@@ -72,8 +72,19 @@ scheduler_status = {
 # OLLAMA LLM CONFIGURATION
 # =====================================================
 
-OLLAMA_API_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3.1"  # Change to your preferred model
+# OLLAMA_API_URL = "http://localhost:11434/api/generate"
+# OLLAMA_MODEL = "llama3.1"  # Change to your preferred model
+
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv() 
+
+# Use environment variables, fallback to local defaults
+OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1")
+
 
 # =====================================================
 # PYDANTIC MODELS
