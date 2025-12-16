@@ -553,7 +553,7 @@ async def generate_llm_explanation(
         for f in top_mutual_funds[:5]
     ])
     
-    # Create the prompt
+    # Create the prompt for a which recommedation suit the user 
     prompt = f"""You are a financial insights assistant inside Raj's investment app.
 Your task is to explain WHY the recommended stocks and mutual funds match the user's profile.
 
