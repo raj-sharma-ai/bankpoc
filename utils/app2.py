@@ -11,7 +11,7 @@ from datetime import datetime
 # CONFIGURATION
 # =====================================================
 
-API_BASE_URL = "https://bankpoc-dymm8xpv2-raj-sharma-ais-projects.vercel.app"
+API_BASE_URL = "http://localhost:8000"
 
 st.set_page_config(
     page_title="Financial Recommendation System",
