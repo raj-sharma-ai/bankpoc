@@ -11,7 +11,7 @@ from datetime import datetime
 # CONFIGURATION
 # =====================================================
 
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = "https://bankpoc-dymm8xpv2-raj-sharma-ais-projects.vercel.app"
 
 st.set_page_config(
     page_title="Financial Recommendation System",
@@ -579,71 +579,9 @@ elif page == "👤 Customer 360 View":
     else:
         st.error("⚠️ Unable to load users. Please check if the API is running.")
 
-# =====================================================
-# PAGE 3: RECOMMENDATIONS (Keeping existing code - shortened for space)
-# # =====================================================
-
-# elif page == "📊 Recommendations":
-#     st.markdown('<div class="main-header">📊 Investment Recommendations</div>', unsafe_allow_html=True)
-    
-#     users_data = get_all_users()
-    
-#     if users_data and users_data.get('users'):
-#         users_list = users_data['users']
-#         user_ids = [user['customer_id'] for user in users_list]
-        
-#         col1, col2 = st.columns([3, 1])
-        
-#         with col1:
-#             selected_user_id = st.selectbox("🔍 Select Customer ID", user_ids)
-        
-#         with col2:
-#             top_k = st.number_input("Top K", min_value=5, max_value=20, value=10)
-        
-#         if st.button("🚀 Generate Recommendations", key="gen_rec"):
-#             with st.spinner("🤖 Generating recommendations..."):
-#                 recommendations = get_recommendations(selected_user_id, top_k)
-                
-#                 if recommendations:
-#                     st.success(f"✅ Recommendations generated!")
-#                     st.session_state.recommendations = recommendations
-        
-#         if 'recommendations' in st.session_state:
-#             recs = st.session_state.recommendations
-#             user_meta = recs['user_metadata']
-            
-#             st.markdown("---")
-            
-#             col1, col2, col3, col4 = st.columns(4)
-            
-#             with col1:
-#                 st.metric("Risk Profile", user_meta['risk_label'].upper())
-#             with col2:
-#                 st.metric("Annual Income", f"₹{user_meta['income']:,.0f}")
-#             with col3:
-#                 st.metric("Credit Score", user_meta['credit_score'])
-#             with col4:
-#                 st.metric("Savings Rate", f"{user_meta['savings_rate']*100:.1f}%")
-            
-#             st.markdown("---")
-            
-#             # Display stocks and funds (simplified - keeping your existing logic)
-#             st.subheader("📈 Top Stock Recommendations")
-#             stocks = recs['top_stock_recommendations']
-#             for i, stock in enumerate(stocks[:3], 1):
-#                 st.markdown(f"**{i}. {stock['symbol']}** - Match: {stock['similarity_score']*100:.1f}%")
-            
-#             st.markdown("---")
-            
-#             st.subheader("💼 Top Mutual Fund Recommendations")
-#             funds = recs['top_mutual_fund_recommendations']
-#             for i, fund in enumerate(funds[:3], 1):
-#                 st.markdown(f"**{i}. {fund['fund_name'][:50]}...** - Match: {fund['similarity_score']*100:.1f}%")
-    
-#     else:
-#         st.error("⚠️ Unable to load users.")
 
 
+#--------------------------------------------Recommendations Page--------------------------------------------------
 
 
 elif page == "📊 Recommendations":
