@@ -1180,37 +1180,20 @@ def predict_insurance_policies(user_id: int) -> Dict:
 
 
 
-
 # @app.on_event("startup")
 # async def load_all_data():
 #     """Load data on startup"""
 #     global users_df, model_data, stocks_data, funds_data, insurance_data
 
 #     try:
-#         # ... existing data loading code ...
-#         insurance_models_loaded = load_insurance_prediction_models()
-#         if insurance_models_loaded:
-#             add_log("STARTUP", "SUCCESS", "Insurance prediction models loaded")
-#         else:
-#             add_log("STARTUP", "WARNING", "Insurance prediction models not loaded")
-        
-#         add_log("STARTUP", "SUCCESS", "API initialized successfully")
-#         start_scheduler()
-#         add_log("STARTUP", "SUCCESS", "API initialized successfully")
-        
-#         # 🔥 YE LINE ADD KARO BRO!
-#         start_scheduler()  # Start the background scheduler
-        
-#     except Exception as e:
-#         add_log("STARTUP", "ERROR", str(e))
-    
-#     try:
-#         if os.path.exists('reco_dummy_gpt.csv'):
-#             users_df = pd.read_csv('reco_dummy_gpt.csv')
+#         # Load main users CSV
+#         if os.path.exists('test_users_BANK.csv'):
+#             users_df = pd.read_csv('test_users_BANK.csv')
 #             add_log("STARTUP", "SUCCESS", f"Loaded {len(users_df)} users from CSV")
 #         else:
 #             add_log("STARTUP", "WARNING", "Users CSV not found")
         
+#         # Load risk model
 #         if os.path.exists('risk_model.pkl'):
 #             with open('risk_model.pkl', 'rb') as f:
 #                 model_data = pickle.load(f)
@@ -1218,6 +1201,7 @@ def predict_insurance_policies(user_id: int) -> Dict:
 #         else:
 #             add_log("STARTUP", "WARNING", "Risk model not found, using fallback")
         
+#         # Load stocks data
 #         if os.path.exists('engineered_stocks.json'):
 #             with open('engineered_stocks.json', 'r') as f:
 #                 stocks_data = json.load(f)
@@ -1225,6 +1209,7 @@ def predict_insurance_policies(user_id: int) -> Dict:
 #         else:
 #             add_log("STARTUP", "WARNING", "Stocks JSON not found")
         
+#         # Load funds data
 #         if os.path.exists('engineered_funds.json'):
 #             with open('engineered_funds.json', 'r') as f:
 #                 funds_data = json.load(f)
@@ -1232,82 +1217,82 @@ def predict_insurance_policies(user_id: int) -> Dict:
 #         else:
 #             add_log("STARTUP", "WARNING", "Funds JSON not found")
         
-#         # Load Insurance Data
+#         # Load Insurance Data (for recommendations)
 #         if os.path.exists('engineered_insurance.json'):
 #             with open('engineered_insurance.json', 'r') as f:
 #                 insurance_data = json.load(f)
 #             add_log("STARTUP", "SUCCESS", f"Loaded {len(insurance_data)} insurance products")
 #         else:
 #             add_log("STARTUP", "WARNING", "Insurance JSON not found")
-#             insurance_data = []  # Initialize as empty list if file not found
+#             insurance_data = []
+        
+#         # 🔥 ADD THIS - Load insurance prediction models (Task 3)
+#         insurance_models_loaded = load_insurance_prediction_models()
+#         if insurance_models_loaded:
+#             add_log("STARTUP", "SUCCESS", "✅ Insurance prediction models loaded (Task 3)")
+#         else:
+#             add_log("STARTUP", "WARNING", "⚠️ Insurance prediction models NOT loaded - Check files")
         
 #         add_log("STARTUP", "SUCCESS", "API initialized successfully")
+        
+#         # Start scheduler
+#         start_scheduler()
         
 #     except Exception as e:
 #         add_log("STARTUP", "ERROR", str(e))
 
 
 
-@app.on_event("startup")
-async def load_all_data():
-    """Load data on startup"""
-    global users_df, model_data, stocks_data, funds_data, insurance_data
+from pathlib import Path
+import pandas as pd
+import json
+import pickle
 
-    try:
-        # Load main users CSV
-        if os.path.exists('test_users_BANK.csv'):
-            users_df = pd.read_csv('test_users_BANK.csv')
-            add_log("STARTUP", "SUCCESS", f"Loaded {len(users_df)} users from CSV")
-        else:
-            add_log("STARTUP", "WARNING", "Users CSV not found")
-        
-        # Load risk model
-        if os.path.exists('risk_model.pkl'):
-            with open('risk_model.pkl', 'rb') as f:
-                model_data = pickle.load(f)
-            add_log("STARTUP", "SUCCESS", "Risk model loaded")
-        else:
-            add_log("STARTUP", "WARNING", "Risk model not found, using fallback")
-        
-        # Load stocks data
-        if os.path.exists('engineered_stocks.json'):
-            with open('engineered_stocks.json', 'r') as f:
-                stocks_data = json.load(f)
-            add_log("STARTUP", "SUCCESS", f"Loaded {len(stocks_data)} stocks")
-        else:
-            add_log("STARTUP", "WARNING", "Stocks JSON not found")
-        
-        # Load funds data
-        if os.path.exists('engineered_funds.json'):
-            with open('engineered_funds.json', 'r') as f:
-                funds_data = json.load(f)
-            add_log("STARTUP", "SUCCESS", f"Loaded {len(funds_data)} funds")
-        else:
-            add_log("STARTUP", "WARNING", "Funds JSON not found")
-        
-        # Load Insurance Data (for recommendations)
-        if os.path.exists('engineered_insurance.json'):
-            with open('engineered_insurance.json', 'r') as f:
-                insurance_data = json.load(f)
-            add_log("STARTUP", "SUCCESS", f"Loaded {len(insurance_data)} insurance products")
-        else:
-            add_log("STARTUP", "WARNING", "Insurance JSON not found")
-            insurance_data = []
-        
-        # 🔥 ADD THIS - Load insurance prediction models (Task 3)
-        insurance_models_loaded = load_insurance_prediction_models()
-        if insurance_models_loaded:
-            add_log("STARTUP", "SUCCESS", "✅ Insurance prediction models loaded (Task 3)")
-        else:
-            add_log("STARTUP", "WARNING", "⚠️ Insurance prediction models NOT loaded - Check files")
-        
-        add_log("STARTUP", "SUCCESS", "API initialized successfully")
-        
-        # Start scheduler
-        start_scheduler()
-        
-    except Exception as e:
-        add_log("STARTUP", "ERROR", str(e))
+BASE_DIR = Path(__file__).resolve().parent  # utils folder
+
+# Users CSV
+users_file = BASE_DIR / "test_users_BANK.csv"
+if users_file.exists():
+    users_df = pd.read_csv(users_file)
+else:
+    users_df = pd.DataFrame()
+    add_log("STARTUP", "WARNING", "Users CSV not found")
+
+# Risk model
+risk_model_file = BASE_DIR / "risk_model.pkl"
+if risk_model_file.exists():
+    with open(risk_model_file, 'rb') as f:
+        model_data = pickle.load(f)
+else:
+    model_data = None
+    add_log("STARTUP", "WARNING", "Risk model not found")
+
+# Stocks JSON
+stocks_file = BASE_DIR / "engineered_stocks.json"
+if stocks_file.exists():
+    with open(stocks_file, 'r') as f:
+        stocks_data = json.load(f)
+else:
+    stocks_data = []
+    add_log("STARTUP", "WARNING", "Stocks JSON not found")
+
+# Funds JSON
+funds_file = BASE_DIR / "engineered_funds.json"
+if funds_file.exists():
+    with open(funds_file, 'r') as f:
+        funds_data = json.load(f)
+else:
+    funds_data = []
+    add_log("STARTUP", "WARNING", "Funds JSON not found")
+
+# Insurance JSON
+insurance_file = BASE_DIR / "engineered_insurance.json"
+if insurance_file.exists():
+    with open(insurance_file, 'r') as f:
+        insurance_data = json.load(f)
+else:
+    insurance_data = []
+    add_log("STARTUP", "WARNING", "Insurance JSON not found")
 
 # =====================================================
 # API ENDPOINTS
