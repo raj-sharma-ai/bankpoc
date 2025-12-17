@@ -11,10 +11,10 @@ from datetime import datetime
 # CONFIGURATION
 # =====================================================
 
-# API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = "http://localhost:8000"
 
 
-API_BASE_URL = "https://bankpoc-3.onrender.com"
+# API_BASE_URL = "https://bankpoc-6.onrender.com"
 
 st.set_page_config(
     page_title="Financial Recommendation System",
@@ -453,15 +453,16 @@ if page == "🏠 Home":
     
     # LLM Status
     st.subheader("🤖 AI Assistant Status")
-    
+
     llm_health = check_llm_health()
-    
+
     if llm_health and llm_health.get('status') == 'online':
         st.success(f"✅ AI Assistant is Online - Model: {llm_health.get('configured_model', 'N/A')}")
-        st.info(f"📚 Available Models: {', '.join(llm_health.get('available_models', []))}")
+        # Groq API doesn't list available models in the same way, so we can simplify this
+        st.info("🚀 Powered by Groq API")
     else:
         st.warning("⚠️ AI Assistant is Offline - Fallback explanations will be used")
-    
+        
     st.markdown("---")
     
     st.markdown("""

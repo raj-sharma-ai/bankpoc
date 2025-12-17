@@ -81,9 +81,27 @@ import os
 
 load_dotenv() 
 
-# Use environment variables, fallback to local defaults
-OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1")
+# =====================================================
+# GROQ LLM CONFIGURATION
+# =====================================================
+
+# =====================================================
+# GROQ LLM CONFIGURATION
+# =====================================================
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+# Try these models in order of preference:
+# "llama-3.3-70b-versatile" (latest, fastest)
+# "llama-3.1-70b-versatile" (stable)
+# "mixtral-8x7b-32768" (good for longer context)
+
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+
+if not GROQ_API_KEY:
+    print("⚠️ WARNING: GROQ_API_KEY not found in environment variables")
+    print("Please set GROQ_API_KEY in your .env file")
 
 
 # =====================================================
@@ -262,9 +280,31 @@ def scheduled_data_refresh():
         #     )
         
         # Reload data into memory
+        # Reload data into memory
+        # Reload data into memory
         if any(results.values()):
-            load_all_data() 
+            global usersdf, modeldata, stocksdata, fundsdata
+            
+            # Load users
+            if os.path.exists("testusersBANK.csv"):
+                usersdf = pd.read_csv("testusersBANK.csv")
+                add_log("SCHEDULER", "SUCCESS", f"Reloaded {len(usersdf)} users")
+            
+            # Load stocks
+            if os.path.exists("engineeredstocks.json"):
+                with open("engineeredstocks.json", 'r') as f:
+                    stocksdata = json.load(f)
+                add_log("SCHEDULER", "SUCCESS", f"Reloaded {len(stocksdata)} stocks")
+            
+            # Load funds
+            if os.path.exists("engineeredfunds.json"):
+                with open("engineeredfunds.json", 'r') as f:
+                    fundsdata = json.load(f)
+                add_log("SCHEDULER", "SUCCESS", f"Reloaded {len(fundsdata)} funds")
+            
             add_log("SCHEDULER", "SUCCESS", "Data refreshed successfully")
+
+
         
         scheduler_status["last_result"] = results
         
@@ -642,7 +682,7 @@ async def generate_llm_explanation(
     top_stocks: List[Dict],
     top_mutual_funds: List[Dict]
 ) -> str:
-    """Generate explanation using Ollama LLM"""
+    """Generate explanation using Groq API"""
     
     # Format stocks for prompt
     stocks_text = "\n".join([
@@ -658,7 +698,7 @@ async def generate_llm_explanation(
         for f in top_mutual_funds[:5]
     ])
     
-    # Create the prompt for a which recommedation suit the user 
+    # Create the prompt
     prompt = f"""You are a financial insights assistant inside Raj's investment app.
 Your task is to explain WHY the recommended stocks and mutual funds match the user's profile.
 
@@ -691,37 +731,59 @@ Top Mutual Fund Recommendations:
 Provide a clear, short explanation the user can understand. Focus on why these recommendations suit their profile."""
 
     try:
+        if not GROQ_API_KEY:
+            add_log("LLM_EXPLAIN", "WARNING", "Groq API key not configured, using fallback")
+            return generate_fallback_explanation(user_profile, top_stocks, top_mutual_funds)
+        
         async with aiohttp.ClientSession() as session:
-            payload = {
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.7,
-                    "top_p": 0.9,
-                    "max_tokens": 500
-                }
+            headers = {
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
             }
             
-            async with session.post(OLLAMA_API_URL, json=payload, timeout=aiohttp.ClientTimeout(total=60)) as response:
+            payload = {
+                "model": GROQ_MODEL,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a helpful financial insights assistant. Provide clear, concise explanations without giving specific financial advice."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "temperature": 0.7,
+                "max_tokens": 500,
+                "top_p": 0.9
+            }
+            
+            async with session.post(
+                GROQ_API_URL, 
+                json=payload, 
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as response:
                 if response.status == 200:
                     result = await response.json()
-                    explanation = result.get('response', '').strip()
+                    explanation = result['choices'][0]['message']['content'].strip()
                     
                     if not explanation:
                         return generate_fallback_explanation(user_profile, top_stocks, top_mutual_funds)
                     
+                    add_log("LLM_EXPLAIN", "SUCCESS", f"Generated explanation using {GROQ_MODEL}")
                     return explanation
                 else:
-                    add_log("LLM_EXPLAIN", "ERROR", f"Ollama API error: {response.status}")
+                    error_text = await response.text()
+                    add_log("LLM_EXPLAIN", "ERROR", f"Groq API error {response.status}: {error_text}")
                     return generate_fallback_explanation(user_profile, top_stocks, top_mutual_funds)
     
     except asyncio.TimeoutError:
-        add_log("LLM_EXPLAIN", "ERROR", "Ollama API timeout")
+        add_log("LLM_EXPLAIN", "ERROR", "Groq API timeout")
         return generate_fallback_explanation(user_profile, top_stocks, top_mutual_funds)
     
     except Exception as e:
-        add_log("LLM_EXPLAIN", "ERROR", f"Ollama error: {str(e)}")
+        add_log("LLM_EXPLAIN", "ERROR", f"Groq error: {str(e)}")
         return generate_fallback_explanation(user_profile, top_stocks, top_mutual_funds)
 
 async def generate_individual_llm_explanation(
@@ -729,7 +791,7 @@ async def generate_individual_llm_explanation(
     item_type: str,
     item_data: Dict
 ) -> str:
-    """Generate explanation for individual stock or mutual fund"""
+    """Generate explanation for individual stock or mutual fund using Groq"""
     
     # Format item details based on type
     if item_type == "stock":
@@ -780,37 +842,59 @@ User Profile:
 Explain specifically why {item_name} is recommended for this user. Focus on the match and alignment with their profile."""
 
     try:
+        if not GROQ_API_KEY:
+            add_log("LLM_INDIVIDUAL", "WARNING", "Groq API key not configured, using fallback")
+            return generate_fallback_individual_explanation(user_profile, item_type, item_data)
+        
         async with aiohttp.ClientSession() as session:
-            payload = {
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.7,
-                    "top_p": 0.9,
-                    "max_tokens": 300
-                }
+            headers = {
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
             }
             
-            async with session.post(OLLAMA_API_URL, json=payload, timeout=aiohttp.ClientTimeout(total=30)) as response:
+            payload = {
+                "model": GROQ_MODEL,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a helpful financial insights assistant. Provide clear, concise explanations without giving specific financial advice."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "temperature": 0.7,
+                "max_tokens": 300,
+                "top_p": 0.9
+            }
+            
+            async with session.post(
+                GROQ_API_URL,
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as response:
                 if response.status == 200:
                     result = await response.json()
-                    explanation = result.get('response', '').strip()
+                    explanation = result['choices'][0]['message']['content'].strip()
                     
                     if not explanation:
                         return generate_fallback_individual_explanation(user_profile, item_type, item_data)
                     
+                    add_log("LLM_INDIVIDUAL", "SUCCESS", f"Generated individual explanation using {GROQ_MODEL}")
                     return explanation
                 else:
-                    add_log("LLM_INDIVIDUAL", "ERROR", f"Ollama API error: {response.status}")
+                    error_text = await response.text()
+                    add_log("LLM_INDIVIDUAL", "ERROR", f"Groq API error {response.status}: {error_text}")
                     return generate_fallback_individual_explanation(user_profile, item_type, item_data)
     
     except asyncio.TimeoutError:
-        add_log("LLM_INDIVIDUAL", "ERROR", "Ollama API timeout")
+        add_log("LLM_INDIVIDUAL", "ERROR", "Groq API timeout")
         return generate_fallback_individual_explanation(user_profile, item_type, item_data)
     
     except Exception as e:
-        add_log("LLM_INDIVIDUAL", "ERROR", f"Ollama error: {str(e)}")
+        add_log("LLM_INDIVIDUAL", "ERROR", f"Groq error: {str(e)}")
         return generate_fallback_individual_explanation(user_profile, item_type, item_data)
 
 def generate_fallback_individual_explanation(
@@ -852,6 +936,7 @@ def generate_fallback_individual_explanation(
 ⚠️ **Important**: Mutual fund investments are subject to market risks. Please read the offer document carefully."""
     
     return explanation
+
 
 
 
@@ -1863,10 +1948,10 @@ async def explain_recommendations(request: ExplanationRequest):
             "explanation": explanation,
             "status": "success",
             "metadata": {
-                "model": OLLAMA_MODEL,
+                "model": GROQ_MODEL,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "user_risk": request.user_profile['risk_label']
-            }
+}
         }
     
     except Exception as e:
@@ -1894,9 +1979,8 @@ async def explain_individual_recommendation(request: IndividualExplanationReques
             "explanation": explanation,
             "status": "success",
             "metadata": {
-                "model": OLLAMA_MODEL,
+                "model": GROQ_MODEL,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "item_type": request.item_type,
                 "user_risk": request.user_profile['risk_label']
             }
         }
@@ -1907,22 +1991,60 @@ async def explain_individual_recommendation(request: IndividualExplanationReques
 
 @app.get("/api/llm/health")
 async def check_llm_health():
-    """Check if Ollama is running and accessible"""
+    """Check if Groq API is accessible"""
     try:
+        if not GROQ_API_KEY:
+            return {
+                "status": "error",
+                "message": "Groq API key not configured",
+                "configured_model": GROQ_MODEL
+            }
+        
         async with aiohttp.ClientSession() as session:
-            async with session.get("http://localhost:11434/api/tags", timeout=aiohttp.ClientTimeout(total=5)) as response:
+            headers = {
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            
+            # Simple test request - CORRECTED PAYLOAD
+            payload = {
+                "model": GROQ_MODEL,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "Hello"
+                    }
+                ],
+                "max_tokens": 10,
+                "temperature": 0.5
+            }
+            
+            async with session.post(
+                GROQ_API_URL,
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
+                response_text = await response.text()
+                
                 if response.status == 200:
-                    data = await response.json()
-                    models = [m['name'] for m in data.get('models', [])]
                     return {
                         "status": "online",
-                        "available_models": models,
-                        "configured_model": OLLAMA_MODEL
+                        "configured_model": GROQ_MODEL,
+                        "api_url": GROQ_API_URL
                     }
                 else:
-                    return {"status": "error", "message": "Ollama API not responding"}
+                    return {
+                        "status": "error",
+                        "message": f"API returned status {response.status}: {response_text}",
+                        "configured_model": GROQ_MODEL
+                    }
     except Exception as e:
-        return {"status": "offline", "message": str(e)}
+        return {
+            "status": "offline",
+            "message": str(e),
+            "configured_model": GROQ_MODEL
+        }
 
 @app.get("/api/admin/logs")
 async def get_admin_logs():
@@ -2027,7 +2149,40 @@ async def check_insurance_models_status():
         "num_features": len(insurance_feature_names) if insurance_feature_names else 0,
         "feature_names": insurance_feature_names if insurance_feature_names else []
     }
-
+@app.get("/api/debug/groq-test")
+async def debug_groq_test():
+    """Test Groq API with full error details"""
+    try:
+        import aiohttp
+        
+        async with aiohttp.ClientSession() as session:
+            headers = {
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "model": GROQ_MODEL,
+                "messages": [{"role": "user", "content": "test"}],
+                "max_tokens": 10
+            }
+            
+            async with session.post(
+                GROQ_API_URL,
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
+                response_text = await response.text()
+                
+                return {
+                    "status_code": response.status,
+                    "response": response_text,
+                    "payload_sent": payload,
+                    "headers_sent": {"Authorization": "Bearer ***", "Content-Type": "application/json"}
+                }
+    except Exception as e:
+        return {"error": str(e)}
 # =====================================================
 # RUN SERVER
 # =====================================================
